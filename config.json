@@ -1,0 +1,65 @@
+{
+  "campus": "Dickinson College",
+  "timezone": "America/New_York",
+  "routes": [
+    {
+      "id": "safety-shuttle",
+      "name": "Safety Shuttle",
+      "color": null,
+      "stops": [
+        {
+          "id": "drayer-hall",
+          "name": "Drayer Hall",
+          "coords": [40.2037, -77.1986],
+          "arrivals": ["06:00", "06:45", "07:30", "08:15", "09:00", "09:45", "10:30", "11:15"]
+        },
+        {
+          "id": "witwer-allison",
+          "name": "Witwer/Allison",
+          "coords": [40.2020, -77.1955],
+          "arrivals": ["06:05", "06:50", "07:35", "08:20", "09:05", "09:50", "10:35", "11:20"]
+        },
+        {
+          "id": "morgan-circle",
+          "name": "Morgan Circle",
+          "coords": [40.2015, -77.1970],
+          "arrivals": ["06:10", "06:55", "07:40", "08:25", "09:10", "09:55", "10:40", "11:25"]
+        },
+        {
+          "id": "gy-parking-lot",
+          "name": "GY Parking Lot",
+          "coords": [40.2030, -77.2010],
+          "arrivals": ["06:15", "07:00", "07:45", "08:30", "09:15", "10:00", "10:45", "11:30"]
+        },
+        {
+          "id": "mckenney-suites",
+          "name": "McKenney Suites",
+          "coords": [40.2045, -77.2025],
+          "arrivals": ["06:20", "07:05", "07:50", "08:35", "09:20", "10:05", "10:50", "11:35"]
+        },
+        {
+          "id": "factory-apts",
+          "name": "Factory Apts",
+          "coords": [40.2003, -77.1930],
+          "arrivals": ["06:25", "07:10", "07:55", "08:40", "09:25", "10:10", "10:55", "11:40"]
+        },
+        {
+          "id": "stuart-denny-hall",
+          "name": "Stuart/Denny Hall",
+          "coords": [40.2025, -77.1990],
+          "arrivals": ["06:30", "07:15", "08:00", "08:45", "09:30", "10:10", "11:00", "11:45"]
+        },
+        {
+          "id": "walmart",
+          "name": "Walmart",
+          "coords": [40.2185, -77.1755],
+          "arrivals": ["06:35", "07:20", "08:05", "08:50", "09:35", "10:20", "11:05", "11:50"]
+        }
+      ]
+    }
+  ],
+  "hours": {
+    "saturday": { "start": "06:00", "end": "11:50" },
+    "sunday": { "start": "06:00", "end": "11:50" }
+  }
+}

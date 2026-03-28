@@ -11,7 +11,7 @@ def fmt_hhmm(minutes: int) -> str:
 
 def plan_shuttle(matched_route: dict, from_stop: dict, to_stop: dict, query_minutes: int) -> list:
     """Return up to two upcoming shuttle trips between from_stop and to_stop.
-    If no trips remain today, returns the first trip of the next run."""
+    Returns empty list if no trips remain today."""
     anchor_arrivals = matched_route["stops"][0]["arrivals"]
     first_dep = parse_hhmm(anchor_arrivals[0])
     last_dep = parse_hhmm(anchor_arrivals[-1])
@@ -29,11 +29,5 @@ def plan_shuttle(matched_route: dict, from_stop: dict, to_stop: dict, query_minu
         if departs >= query_minutes:
             upcoming.append({"departs": departs, "arrives": arrives})
         loop_start += interval
-
-    # If nothing left today, return the first trip (next scheduled run)
-    if not upcoming:
-        departs = first_dep + from_offset
-        arrives = first_dep + to_offset + (interval if wraps else 0)
-        upcoming.append({"departs": departs, "arrives": arrives})
 
     return upcoming

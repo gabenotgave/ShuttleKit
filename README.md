@@ -101,6 +101,21 @@ If no trips remain tonight, the response will be:
 
 ---
 
+## Testing
+
+Unit tests cover the geo and planning modules using pytest.
+
+```bash
+pytest tests/api/ -v
+```
+
+| Module | Coverage |
+|--------|----------|
+| `api/geo.py` | Haversine distance, walk time, nearest stop sorting |
+| `api/planning.py` | Time parsing/formatting, loop generation, wrap-around logic |
+
+---
+
 ## Configuration
 
 Routes and stops are defined in `config.json` at the project root. Each stop requires:

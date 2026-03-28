@@ -6,79 +6,135 @@
   },
   "item": [
     {
-      "name": "Plan - Normal trip",
-      "request": {
-        "method": "GET",
-        "url": {
-          "raw": "http://localhost:8000/api/plan?from_lat=40.2009&from_lng=-77.1969&to_lat=40.1899&to_lng=-77.1946&time=06:10",
-          "host": ["localhost"],
-          "port": "8000",
-          "path": ["api", "plan"],
-          "query": [
-            { "key": "from_lat", "value": "40.2009" },
-            { "key": "from_lng", "value": "-77.1969" },
-            { "key": "to_lat", "value": "40.1899" },
-            { "key": "to_lng", "value": "-77.1946" },
-            { "key": "time", "value": "06:10" }
-          ]
+      "name": "Stops",
+      "item": [
+        {
+          "name": "Get all stops",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:8000/api/stops",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["api", "stops"]
+            }
+          }
         }
-      }
+      ]
     },
     {
-      "name": "Plan - Wrap-around trip",
-      "request": {
-        "method": "GET",
-        "url": {
-          "raw": "http://localhost:8000/api/plan?from_lat=40.1899&from_lng=-77.1946&to_lat=40.2009&to_lng=-77.1969&time=06:10",
-          "host": ["localhost"],
-          "port": "8000",
-          "path": ["api", "plan"],
-          "query": [
-            { "key": "from_lat", "value": "40.1899" },
-            { "key": "from_lng", "value": "-77.1946" },
-            { "key": "to_lat", "value": "40.2009" },
-            { "key": "to_lng", "value": "-77.1969" },
-            { "key": "time", "value": "06:10" }
-          ]
+      "name": "Routes",
+      "item": [
+        {
+          "name": "Get all routes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:8000/api/routes",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["api", "routes"]
+            }
+          }
         }
-      }
+      ]
     },
     {
-      "name": "Plan - No more trips tonight",
-      "request": {
-        "method": "GET",
-        "url": {
-          "raw": "http://localhost:8000/api/plan?from_lat=40.2009&from_lng=-77.1969&to_lat=40.1899&to_lng=-77.1946&time=11:55",
-          "host": ["localhost"],
-          "port": "8000",
-          "path": ["api", "plan"],
-          "query": [
-            { "key": "from_lat", "value": "40.2009" },
-            { "key": "from_lng", "value": "-77.1969" },
-            { "key": "to_lat", "value": "40.1899" },
-            { "key": "to_lng", "value": "-77.1946" },
-            { "key": "time", "value": "11:55" }
-          ]
+      "name": "Status",
+      "item": [
+        {
+          "name": "Get shuttle status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:8000/api/status",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["api", "status"]
+            }
+          }
         }
-      }
+      ]
     },
     {
-      "name": "Plan - No time param (uses server time)",
-      "request": {
-        "method": "GET",
-        "url": {
-          "raw": "http://localhost:8000/api/plan?from_lat=40.2009&from_lng=-77.1969&to_lat=40.1899&to_lng=-77.1946",
-          "host": ["localhost"],
-          "port": "8000",
-          "path": ["api", "plan"],
-          "query": [
-            { "key": "from_lat", "value": "40.2009" },
-            { "key": "from_lng", "value": "-77.1969" },
-            { "key": "to_lat", "value": "40.1899" },
-            { "key": "to_lng", "value": "-77.1946" }
-          ]
+      "name": "Plan",
+      "item": [
+        {
+          "name": "Plan - Normal trip",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:8000/api/plan?from_lat=40.2009&from_lng=-77.1969&to_lat=40.1899&to_lng=-77.1946&time=06:10",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["api", "plan"],
+              "query": [
+                { "key": "from_lat", "value": "40.2009" },
+                { "key": "from_lng", "value": "-77.1969" },
+                { "key": "to_lat", "value": "40.1899" },
+                { "key": "to_lng", "value": "-77.1946" },
+                { "key": "time", "value": "06:10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Plan - Wrap-around trip",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:8000/api/plan?from_lat=40.1899&from_lng=-77.1946&to_lat=40.2009&to_lng=-77.1969&time=06:10",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["api", "plan"],
+              "query": [
+                { "key": "from_lat", "value": "40.1899" },
+                { "key": "from_lng", "value": "-77.1946" },
+                { "key": "to_lat", "value": "40.2009" },
+                { "key": "to_lng", "value": "-77.1969" },
+                { "key": "time", "value": "06:10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Plan - No more trips tonight",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:8000/api/plan?from_lat=40.2009&from_lng=-77.1969&to_lat=40.1899&to_lng=-77.1946&time=11:55",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["api", "plan"],
+              "query": [
+                { "key": "from_lat", "value": "40.2009" },
+                { "key": "from_lng", "value": "-77.1969" },
+                { "key": "to_lat", "value": "40.1899" },
+                { "key": "to_lng", "value": "-77.1946" },
+                { "key": "time", "value": "11:55" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Plan - No time param (uses server time)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:8000/api/plan?from_lat=40.2009&from_lng=-77.1969&to_lat=40.1899&to_lng=-77.1946",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["api", "plan"],
+              "query": [
+                { "key": "from_lat", "value": "40.2009" },
+                { "key": "from_lng", "value": "-77.1969" },
+                { "key": "to_lat", "value": "40.1899" },
+                { "key": "to_lng", "value": "-77.1946" }
+              ]
+            }
+          }
         }
-      }
+      ]
     }
   ]
 }

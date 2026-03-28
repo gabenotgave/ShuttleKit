@@ -11,8 +11,7 @@
           "id": "drayer-hall",
           "name": "DRAYER HALL",
           "coords": [
-            40.201,
-            -77.197
+            40.2009, -77.1968
           ],
           "arrivals": [
             "06:00",
@@ -29,8 +28,7 @@
           "id": "witwer-allision",
           "name": "WITWER ALLISION",
           "coords": [
-            40.006,
-            -75.101
+            40.2002, -77.1986
           ],
           "arrivals": [
             "06:05",
@@ -47,8 +45,7 @@
           "id": "morgan-circle",
           "name": "MORGAN CIRCLE",
           "coords": [
-            40.008,
-            -75.102
+            40.2016, -77.1987
           ],
           "arrivals": [
             "06:10",
@@ -65,8 +62,7 @@
           "id": "gy-paking-lot",
           "name": "GY PAKING LOT",
           "coords": [
-            40.007,
-            -75.103
+            40.2046, -77.2022
           ],
           "arrivals": [
             "06:15",
@@ -83,8 +79,7 @@
           "id": "mckenney-suites",
           "name": "MCKENNEY SUITES",
           "coords": [
-            40.2027,
-            -77.199
+            40.2028, -77.1991
           ],
           "arrivals": [
             "06:20",
@@ -101,8 +96,7 @@
           "id": "factory-apts",
           "name": "FACTORY APTS",
           "coords": [
-            40.003,
-            -75.106
+            40.2046, -77.1947
           ],
           "arrivals": [
             "06:25",
@@ -117,10 +111,9 @@
         },
         {
           "id": "stuart-denny-hall",
-          "name": "STUART/DE NNY HALL",
+          "name": "STUART/DENNY HALL",
           "coords": [
-            40.002,
-            -75.107
+            40.2024, -77.1935
           ],
           "arrivals": [
             "06:30",
@@ -137,8 +130,7 @@
           "id": "walmart",
           "name": "WALMART",
           "coords": [
-            40.1894,
-            -77.1943
+            40.2028, -77.1991
           ],
           "arrivals": [
             "06:35",
@@ -156,22 +148,6 @@
   ],
   "hours": {
     "monday": {
-      "start": "06:00",
-      "end": "11:50"
-    },
-    "tuesday": {
-      "start": "06:00",
-      "end": "11:50"
-    },
-    "wednesday": {
-      "start": "06:00",
-      "end": "11:50"
-    },
-    "thursday": {
-      "start": "06:00",
-      "end": "11:50"
-    },
-    "friday": {
       "start": "06:00",
       "end": "11:50"
     }

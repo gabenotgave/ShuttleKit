@@ -86,7 +86,7 @@ def process(filename):
 
     schedule = json.loads(text)
 
-    output_path = os.path.join("ingestion", "schedule.json")
+    output_path = os.path.join("config.json")
     with open(output_path, "w") as f:
         json.dump(schedule, f, indent=2)
 

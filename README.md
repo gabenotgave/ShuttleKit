@@ -19,8 +19,6 @@ A campus shuttle planning system with a FastAPI backend and Next.js frontend. Gi
 
 ## Quick Start
 
-> **Existing users:** If you're upgrading from an older version, see [MIGRATION.md](MIGRATION.md) for migration instructions.
-
 ### Prerequisites
 
 - Python 3.11+

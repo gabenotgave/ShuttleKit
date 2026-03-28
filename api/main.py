@@ -8,6 +8,10 @@ from datetime import datetime
 
 from fastapi.middleware.cors import CORSMiddleware
 
+from api.geo import nearest_stops, walk_minutes
+from api.planning import fmt_hhmm, parse_hhmm, plan_shuttle
+
+
 app = FastAPI(title="ShuttleKit API")
 
 app.add_middleware(
@@ -92,26 +96,14 @@ print(get_status())
 
 
 
-def parse_hhmm(s: str) -> int:
-    """Return total minutes since midnight for a HH:MM string."""
-    h, m = map(int, s.split(":"))
-    return h * 60 + m
-
-
-def fmt_hhmm(minutes: int) -> str:
-    """Format total minutes since midnight as HH:MM."""
-    return f"{minutes // 60:02d}:{minutes % 60:02d}"
-
-
 @app.get("/api/plan")
 def get_plan(
-    from_stop_id: str = Query(..., alias="from"),
-    to_stop_id: str = Query(..., alias="to"),
+    from_lat: float = Query(...),
+    from_lng: float = Query(...),
+    to_lat: float = Query(...),
+    to_lng: float = Query(...),
     time: str = Query(default=None, description="HH:MM — defaults to now"),
 ):
-    if from_stop_id == to_stop_id:
-        raise HTTPException(status_code=400, detail="Source and destination cannot be the same")
-
     config = load_config()
     tz = ZoneInfo(config["timezone"])
 
@@ -122,57 +114,71 @@ def get_plan(
         now = datetime.now(tz)
         query_minutes = now.hour * 60 + now.minute
 
+    all_stops = [s for r in config["routes"] for s in r["stops"]]
+
+    # Find nearest boarding stop; if nearest destination stop is the same, use second nearest
+    from_ranked = nearest_stops(all_stops, from_lat, from_lng)
+    from_stop = from_ranked[0]
+
+    to_ranked = nearest_stops(all_stops, to_lat, to_lng)
+    to_stop = to_ranked[0] if to_ranked[0]["id"] != from_stop["id"] else to_ranked[1]
+
     # Find a route containing both stops
     matched_route = None
-    from_stop = to_stop = None
     for route in config["routes"]:
-        stops = route["stops"]
-        stop_ids = [s["id"] for s in stops]
-        if from_stop_id in stop_ids and to_stop_id in stop_ids:
+        ids = [s["id"] for s in route["stops"]]
+        if from_stop["id"] in ids and to_stop["id"] in ids:
+            # Use the stop objects from this route (they carry arrivals)
+            from_stop = route["stops"][ids.index(from_stop["id"])]
+            to_stop = route["stops"][ids.index(to_stop["id"])]
             matched_route = route
-            from_stop = stops[stop_ids.index(from_stop_id)]
-            to_stop = stops[stop_ids.index(to_stop_id)]
             break
 
     if not matched_route:
-        all_stop_ids = {s["id"] for r in config["routes"] for s in r["stops"]}
-        if from_stop_id not in all_stop_ids:
-            raise HTTPException(status_code=400, detail=f"Unknown stop: {from_stop_id}")
-        if to_stop_id not in all_stop_ids:
-            raise HTTPException(status_code=400, detail=f"Unknown stop: {to_stop_id}")
-        raise HTTPException(status_code=400, detail="No route connects these two stops")
+        return {"message": "No route connects the nearest stops to your locations"}
 
-    # Derive loop parameters from the first stop's arrivals
-    anchor_arrivals = matched_route["stops"][0]["arrivals"]
-    first_dep = parse_hhmm(anchor_arrivals[0])
-    last_dep = parse_hhmm(anchor_arrivals[-1])
-    interval = parse_hhmm(anchor_arrivals[1]) - first_dep
-
-    # Derive per-stop offsets relative to the anchor stop
-    from_offset = parse_hhmm(from_stop["arrivals"][0]) - first_dep
-    to_offset = parse_hhmm(to_stop["arrivals"][0]) - first_dep
-    wraps = to_offset < from_offset  # passenger rides past loop start
-
-    # Generate all departures after query time, take first two
-    upcoming = []
-    loop_start = first_dep
-    while loop_start <= last_dep:
-        # Set depart and arrive offset for specific stops
-        departs = loop_start + from_offset
-        arrives = loop_start + to_offset + (interval if wraps else 0)
-        if departs > query_minutes:
-            upcoming.append({
-                "route": matched_route["name"],
-                "departs": fmt_hhmm(departs),
-                "arrives": fmt_hhmm(arrives),
-                "wait_minutes": departs - query_minutes,
-            })
-        loop_start += interval
+    upcoming = plan_shuttle(matched_route, from_stop, to_stop, query_minutes)
 
     if not upcoming:
-        return {"message": "No more trips tonight"}
+        return {"message": "No more shuttle trips tonight"}
 
-    result = {"from": from_stop["name"], "to": to_stop["name"], "next": upcoming[0]}
-    if len(upcoming) >= 2:
-        result["backup"] = upcoming[1]
-    return result
+    trip = upcoming[0]
+    departs_min = trip["departs"]
+    arrives_min = trip["arrives"]
+
+    walk_to_min = walk_minutes(from_lat, from_lng, from_stop["coords"][0], from_stop["coords"][1])
+    walk_from_min = walk_minutes(to_stop["coords"][0], to_stop["coords"][1], to_lat, to_lng)
+    ride_min = arrives_min - departs_min
+    total_min = (departs_min - query_minutes) + ride_min + walk_from_min
+    arrives_at = fmt_hhmm(query_minutes + total_min)
+
+    return {
+        "legs": [
+            {
+                "type": "walk",
+                "description": f"Walk to {from_stop['name']}",
+                "duration_minutes": walk_to_min,
+                "from": {"name": "Your location", "coords": [from_lat, from_lng]},
+                "to": {"name": from_stop["name"], "coords": from_stop["coords"]},
+            },
+            {
+                "type": "shuttle",
+                "description": f"{matched_route['name']} shuttle",
+                "departs": fmt_hhmm(departs_min),
+                "arrives": fmt_hhmm(arrives_min),
+                "wait_minutes": departs_min - query_minutes,
+                "ride_minutes": ride_min,
+                "from": {"name": from_stop["name"], "coords": from_stop["coords"]},
+                "to": {"name": to_stop["name"], "coords": to_stop["coords"]},
+            },
+            {
+                "type": "walk",
+                "description": "Walk to destination",
+                "duration_minutes": walk_from_min,
+                "from": {"name": to_stop["name"], "coords": to_stop["coords"]},
+                "to": {"name": "Your destination", "coords": [to_lat, to_lng]},
+            },
+        ],
+        "total_minutes": total_min,
+        "arrives_at": arrives_at,
+    }

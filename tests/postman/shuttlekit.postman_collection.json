@@ -10,13 +10,15 @@
       "request": {
         "method": "GET",
         "url": {
-          "raw": "http://localhost:8000/api/plan?from=drayer-hall&to=walmart&time=06:10",
+          "raw": "http://localhost:8000/api/plan?from_lat=40.2009&from_lng=-77.1969&to_lat=40.1899&to_lng=-77.1946&time=06:10",
           "host": ["localhost"],
           "port": "8000",
           "path": ["api", "plan"],
           "query": [
-            { "key": "from", "value": "drayer-hall" },
-            { "key": "to", "value": "walmart" },
+            { "key": "from_lat", "value": "40.2009" },
+            { "key": "from_lng", "value": "-77.1969" },
+            { "key": "to_lat", "value": "40.1899" },
+            { "key": "to_lng", "value": "-77.1946" },
             { "key": "time", "value": "06:10" }
           ]
         }
@@ -27,13 +29,15 @@
       "request": {
         "method": "GET",
         "url": {
-          "raw": "http://localhost:8000/api/plan?from=walmart&to=drayer-hall&time=06:10",
+          "raw": "http://localhost:8000/api/plan?from_lat=40.1899&from_lng=-77.1946&to_lat=40.2009&to_lng=-77.1969&time=06:10",
           "host": ["localhost"],
           "port": "8000",
           "path": ["api", "plan"],
           "query": [
-            { "key": "from", "value": "walmart" },
-            { "key": "to", "value": "drayer-hall" },
+            { "key": "from_lat", "value": "40.1899" },
+            { "key": "from_lng", "value": "-77.1946" },
+            { "key": "to_lat", "value": "40.2009" },
+            { "key": "to_lng", "value": "-77.1969" },
             { "key": "time", "value": "06:10" }
           ]
         }
@@ -44,48 +48,34 @@
       "request": {
         "method": "GET",
         "url": {
-          "raw": "http://localhost:8000/api/plan?from=drayer-hall&to=walmart&time=11:55",
+          "raw": "http://localhost:8000/api/plan?from_lat=40.2009&from_lng=-77.1969&to_lat=40.1899&to_lng=-77.1946&time=11:55",
           "host": ["localhost"],
           "port": "8000",
           "path": ["api", "plan"],
           "query": [
-            { "key": "from", "value": "drayer-hall" },
-            { "key": "to", "value": "walmart" },
+            { "key": "from_lat", "value": "40.2009" },
+            { "key": "from_lng", "value": "-77.1969" },
+            { "key": "to_lat", "value": "40.1899" },
+            { "key": "to_lng", "value": "-77.1946" },
             { "key": "time", "value": "11:55" }
           ]
         }
       }
     },
     {
-      "name": "Plan - Unknown stop",
+      "name": "Plan - No time param (uses server time)",
       "request": {
         "method": "GET",
         "url": {
-          "raw": "http://localhost:8000/api/plan?from=fake-stop&to=walmart&time=06:10",
+          "raw": "http://localhost:8000/api/plan?from_lat=40.2009&from_lng=-77.1969&to_lat=40.1899&to_lng=-77.1946",
           "host": ["localhost"],
           "port": "8000",
           "path": ["api", "plan"],
           "query": [
-            { "key": "from", "value": "fake-stop" },
-            { "key": "to", "value": "walmart" },
-            { "key": "time", "value": "06:10" }
-          ]
-        }
-      }
-    },
-    {
-      "name": "Plan - Same stop error",
-      "request": {
-        "method": "GET",
-        "url": {
-          "raw": "http://localhost:8000/api/plan?from=drayer-hall&to=drayer-hall&time=06:10",
-          "host": ["localhost"],
-          "port": "8000",
-          "path": ["api", "plan"],
-          "query": [
-            { "key": "from", "value": "drayer-hall" },
-            { "key": "to", "value": "drayer-hall" },
-            { "key": "time", "value": "06:10" }
+            { "key": "from_lat", "value": "40.2009" },
+            { "key": "from_lng", "value": "-77.1969" },
+            { "key": "to_lat", "value": "40.1899" },
+            { "key": "to_lng", "value": "-77.1946" }
           ]
         }
       }

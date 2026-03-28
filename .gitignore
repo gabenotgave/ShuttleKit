@@ -17,12 +17,20 @@ env/
 # Environment variables
 .env
 .env.*
+!.env.example
+!.env.local.example
+web/.env.local
+web/.env*.local
+!web/.env.local.example
 
 # Node
 node_modules/
 web/dist/
 web/.next/
 web/out/
+web/.turbo/
+*.tsbuildinfo
+next-env.d.ts
 
 # Vite
 *.local
@@ -38,8 +46,9 @@ yarn-error.log*
 Thumbs.db
 
 # IDE
-.vscode/settings.json
+.vscode/
 .idea/
+.kiro/
 
 # Pytest / coverage
 .pytest_cache/

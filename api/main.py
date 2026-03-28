@@ -16,7 +16,7 @@ app = FastAPI(title="ShuttleKit API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:3000"],
     allow_methods=["GET"],
     allow_headers=["*"],
 )
@@ -28,16 +28,28 @@ def load_config() -> dict:
         return json.load(f)
 
 
+@app.get("/api/config")
+def get_config():
+    config = load_config()
+    # Compute map center as average of all stop coords
+    all_stops = [s for r in config["routes"] for s in r["stops"]]
+    avg_lat = sum(s["coords"][0] for s in all_stops) / len(all_stops)
+    avg_lng = sum(s["coords"][1] for s in all_stops) / len(all_stops)
+    return {
+        "campus": config["campus"],
+        "map_center": {"lat": avg_lat, "lng": avg_lng},
+    }
+
+
 @app.get("/api/stops")
 def get_stops():
     stopsMap = {}
-
     config = load_config()
 
     for route in config["routes"]:
         for stop in route["stops"]:
             if stop["id"] in stopsMap:
-                stopsMap[stop["id"]["routes"].append(route["id"])]
+                stopsMap[stop["id"]]["routes"].append(route["id"])
             else:
                 stopsMap[stop["id"]] = {
                     "id": stop["id"],
@@ -46,8 +58,6 @@ def get_stops():
                     "routes": [route["id"]],
                 }
     return stopsMap
-
-print(get_stops())
 
 
 @app.get("/api/routes")
@@ -71,28 +81,29 @@ def get_routes():
 
 @app.get("/api/status")
 def get_status():
-    
     config = load_config()
-    tz = datetime.now().astimezone().tzinfo
-    message = {}
-    timeNow = datetime.now(tz)
-    day = datetime.now().strftime("%A").lower()
+    tz = ZoneInfo(config["timezone"])
+    now = datetime.now(tz)
+    day = now.strftime("%A").lower()
 
     hours = config["hours"]
 
-    if day is not hours:
-        message = {"active": False, "message": "The bus will not be running today"}
-        return message  
-    
-    start = config["hours"]["saturday"]["start"]
-    end = config["hours"]["saturday"]["end"]
+    if day not in hours:
+        return {"active": False, "message": "The shuttle will not be running today"}
 
-    if timeNow >= start and timeNow <= end: 
-        message = {"active": True, "message": "The shuttle is currently running"}
+    start_str = hours[day]["start"]
+    end_str = hours[day]["end"]
 
-    return message
+    # Parse "HH:MM" strings into today's aware datetimes using the config timezone
+    start_h, start_m = map(int, start_str.split(":"))
+    end_h, end_m = map(int, end_str.split(":"))
+    start_time = now.replace(hour=start_h, minute=start_m, second=0, microsecond=0)
+    end_time = now.replace(hour=end_h, minute=end_m, second=0, microsecond=0)
 
-print(get_status())
+    if start_time <= now <= end_time:
+        return {"active": True, "message": "The shuttle is currently running"}
+    else:
+        return {"active": False, "message": "The shuttle is not running right now"}
 
 
 

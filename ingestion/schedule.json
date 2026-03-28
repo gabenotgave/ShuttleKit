@@ -1,0 +1,155 @@
+{
+  "campus": "Unknown University",
+  "timezone": "America/New_York",
+  "routes": [
+    {
+      "id": "safety-shuttle",
+      "name": "Safety Shuttle",
+      "color": null,
+      "stops": [
+        {
+          "id": "drayer-hall",
+          "name": "DRAYER HALL",
+          "coords": [],
+          "arrivals": [
+            "06:00",
+            "06:45",
+            "07:30",
+            "08:15",
+            "09:00",
+            "09:45",
+            "10:30",
+            "11:15"
+          ]
+        },
+        {
+          "id": "witwer-allision",
+          "name": "WITWER ALLISION",
+          "coords": [],
+          "arrivals": [
+            "06:05",
+            "06:50",
+            "07:35",
+            "08:20",
+            "09:05",
+            "09:50",
+            "10:35",
+            "11:20"
+          ]
+        },
+        {
+          "id": "morgan-circle",
+          "name": "MORGAN CIRCLE",
+          "coords": [],
+          "arrivals": [
+            "06:10",
+            "06:55",
+            "07:40",
+            "08:25",
+            "09:10",
+            "09:55",
+            "10:40",
+            "11:25"
+          ]
+        },
+        {
+          "id": "gy-paking-lot",
+          "name": "GY PAKING LOT",
+          "coords": [],
+          "arrivals": [
+            "06:15",
+            "07:00",
+            "07:45",
+            "08:30",
+            "09:15",
+            "10:00",
+            "10:45",
+            "11:30"
+          ]
+        },
+        {
+          "id": "mckenney-suites",
+          "name": "MCKENNEY SUITES",
+          "coords": [],
+          "arrivals": [
+            "06:20",
+            "07:05",
+            "07:50",
+            "08:35",
+            "09:20",
+            "10:05",
+            "10:50",
+            "11:35"
+          ]
+        },
+        {
+          "id": "factory-apts",
+          "name": "FACTORY APTS",
+          "coords": [],
+          "arrivals": [
+            "06:25",
+            "07:10",
+            "07:55",
+            "08:40",
+            "09:25",
+            "10:10",
+            "10:55",
+            "11:40"
+          ]
+        },
+        {
+          "id": "stuart-denny-hall",
+          "name": "STUART/DENNY HALL",
+          "coords": [],
+          "arrivals": [
+            "06:30",
+            "07:15",
+            "08:00",
+            "08:45",
+            "09:30",
+            "10:15",
+            "11:00",
+            "11:45"
+          ]
+        },
+        {
+          "id": "walmart",
+          "name": "WALMART",
+          "coords": [],
+          "arrivals": [
+            "06:35",
+            "07:20",
+            "08:05",
+            "08:50",
+            "09:35",
+            "10:20",
+            "11:05",
+            "11:50"
+          ]
+        }
+      ]
+    }
+  ],
+  "hours": {
+    "monday": {
+      "start": "06:00",
+      "end": "11:50"
+    },
+    "tuesday": {
+      "start": "06:00",
+      "end": "11:50"
+    },
+    "wednesday": {
+      "start": "06:00",
+      "end": "11:50"
+    },
+    "thursday": {
+      "start": "06:00",
+      "end": "11:50"
+    },
+    "friday": {
+      "start": "06:00",
+      "end": "11:50"
+    }
+  }
+}

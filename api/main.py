@@ -29,7 +29,22 @@ def get_stops():
 
 @app.get("/api/routes")
 def get_routes():
-    pass
+
+    try:
+        config = load_config()
+    except FileNotFoundError:
+        return {"error": "Schedule file not found"}, 404
+    
+    routes = []
+    for route in config["routes"]:
+        sorted_stops = sorted(route["stops"], key=lambda s: s["arrivals"][0])
+        routes.append({
+            "id": route["id"],
+            "name": route["name"],
+            "color": route.get("color"),
+            "path": [stop["coords"] for stop in sorted_stops]
+        })
+    return routes
 
 
 @app.get("/api/status")

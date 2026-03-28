@@ -190,6 +190,16 @@ Tests cover geospatial calculations, route planning logic, and API endpoints.
 
 ---
 
+## Contributors
+
+ShuttleKit was created and developed by:
+
+- **Gabriel Arnold** - [arnolgab@dickinson.edu](mailto:arnolgab@dickinson.edu)
+- **Spencer Goodman** - [goodmasp@dickinson.edu](mailto:goodmasp@dickinson.edu)
+- **Edin Slawek** - [slaweks@dickinson.edu](mailto:slaweks@dickinson.edu)
+
+---
+
 ## Contributing
 
 We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to get started.

@@ -1,0 +1,94 @@
+{
+  "info": {
+    "name": "ShuttleKit",
+    "_postman_id": "shuttlekit-collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Plan - Normal trip",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8000/api/plan?from=drayer-hall&to=walmart&time=06:10",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "plan"],
+          "query": [
+            { "key": "from", "value": "drayer-hall" },
+            { "key": "to", "value": "walmart" },
+            { "key": "time", "value": "06:10" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Plan - Wrap-around trip",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8000/api/plan?from=walmart&to=drayer-hall&time=06:10",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "plan"],
+          "query": [
+            { "key": "from", "value": "walmart" },
+            { "key": "to", "value": "drayer-hall" },
+            { "key": "time", "value": "06:10" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Plan - No more trips tonight",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8000/api/plan?from=drayer-hall&to=walmart&time=11:55",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "plan"],
+          "query": [
+            { "key": "from", "value": "drayer-hall" },
+            { "key": "to", "value": "walmart" },
+            { "key": "time", "value": "11:55" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Plan - Unknown stop",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8000/api/plan?from=fake-stop&to=walmart&time=06:10",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "plan"],
+          "query": [
+            { "key": "from", "value": "fake-stop" },
+            { "key": "to", "value": "walmart" },
+            { "key": "time", "value": "06:10" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Plan - Same stop error",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8000/api/plan?from=drayer-hall&to=drayer-hall&time=06:10",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "plan"],
+          "query": [
+            { "key": "from", "value": "drayer-hall" },
+            { "key": "to", "value": "drayer-hall" },
+            { "key": "time", "value": "06:10" }
+          ]
+        }
+      }
+    }
+  ]
+}

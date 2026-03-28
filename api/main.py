@@ -1,9 +1,11 @@
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI, HTTPException, Query
+from datetime import datetime
+
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="ShuttleKit API")
@@ -24,17 +26,55 @@ def load_config() -> dict:
 
 @app.get("/api/stops")
 def get_stops():
-    pass
+    stopsMap = {}
+
+    config = load_config()
+
+    for route in config["routes"]:
+        for stop in route["stops"]:
+            if stop["id"] in stopsMap:
+                stopsMap[stop["id"]["routes"].append(route["id"])]
+            else:
+                stopsMap[stop["id"]] = {
+                    "id": stop["id"],
+                    "name": stop["name"],
+                    "coords": stop["coords"],
+                    "routes": [route["id"]],
+                }
+    return stopsMap
+
+print(get_stops())
 
 
 @app.get("/api/routes")
 def get_routes():
     pass
 
-
 @app.get("/api/status")
 def get_status():
-    pass
+    
+    config = load_config()
+    tz = datetime.now().astimezone().tzinfo
+    message = {}
+    timeNow = datetime.now(tz)
+    day = datetime.now().strftime("%A").lower()
+
+    hours = config["hours"]
+
+    if day is not hours:
+        message = {"active": False, "message": "The bus will not be running today"}
+        return message  
+    
+    start = config["hours"]["saturday"]["start"]
+    end = config["hours"]["saturday"]["end"]
+
+    if timeNow >= start and timeNow <= end: 
+        message = {"active": True, "message": "The shuttle is currently running"}
+
+    return message
+
+print(get_status())
+
 
 
 def parse_hhmm(s: str) -> int:

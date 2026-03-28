@@ -1,5 +1,11 @@
+import sys
+from pathlib import Path
 import pytest
-from api.planning import parse_hhmm, fmt_hhmm, plan_shuttle
+
+# Add parent directory to path so we can import from api modules
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from planning import parse_hhmm, fmt_hhmm, plan_shuttle
 
 
 class TestParseHhmm:

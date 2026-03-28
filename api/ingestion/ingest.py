@@ -51,7 +51,14 @@ Rules:
 
 
 def extract_schedule(filename):
-    filepath = os.path.join("ingestion", filename)
+    # Support both relative path from api/ and from ingestion/ directory
+    if os.path.exists(filename):
+        filepath = filename
+    elif os.path.exists(os.path.join("ingestion", filename)):
+        filepath = os.path.join("ingestion", filename)
+    else:
+        filepath = filename  # Let it fail with clear error
+    
     ext = filename.lower().rsplit('.', 1)[-1]
 
     mime_types = {
@@ -193,13 +200,13 @@ def run(filename, campus, location, do_geocode):
     with open(output_path, "w") as f:
         json.dump(config, f, indent=2)
 
-    print(f"Done! Saved to {output_path}")
+    print(f"Done! Saved to {os.path.abspath(output_path)}")
 
     print("Please review the data in config.json to ensure accuracy. You can modify the file to make any corrections.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Extract shuttle schedule from image/PDF")
-    parser.add_argument("file", help="Filename in ingestion/ folder (e.g. schedule.png)")
+    parser.add_argument("file", help="Schedule file path (e.g. ingestion/schedule.png)")
     parser.add_argument("--campus", required=True, help="College name (e.g. 'Dickinson College')")
     parser.add_argument("--location", required=True, help="City/region anchor (e.g. 'Carlisle, PA')")
     parser.add_argument("--geocode", action="store_true", help="Enable geocoding to refine coordinates")

@@ -1,5 +1,11 @@
+import sys
+from pathlib import Path
 import pytest
-from api.geo import haversine_meters, walk_minutes, nearest_stops
+
+# Add parent directory to path so we can import from api modules
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from geo import haversine_meters, walk_minutes, nearest_stops
 
 
 # Known coords from config.json

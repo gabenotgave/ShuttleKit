@@ -19,6 +19,9 @@ env/
 .env.*
 !.env.example
 !.env.local.example
+api/.env
+api/.env.*
+!api/.env.example
 web/.env.local
 web/.env*.local
 !web/.env.local.example

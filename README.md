@@ -9,18 +9,22 @@ A campus shuttle planning system with a FastAPI backend and Next.js frontend. Gi
 - Real-time trip planning with walk + shuttle legs
 - Interactive Google Maps display with labeled pins
 - Shuttle status indicator (active/inactive based on schedule)
-- Configurable campus, routes, stops, and hours via `config.json`
+- Automated schedule ingestion from PDFs/images using LLM vision models
+- Configurable campus, routes, stops, and hours
 - RESTful API with FastAPI
 - Modern Next.js frontend with TypeScript and Tailwind CSS
+- Fully decoupled architecture for flexible deployment
 
 ---
 
-## Getting Started
+## Quick Start
+
+> **Existing users:** If you're upgrading from an older version, see [MIGRATION.md](MIGRATION.md) for migration instructions.
 
 ### Prerequisites
 
 - Python 3.11+
-- Node.js 18+ (for the frontend)
+- Node.js 18+
 - Google Maps API key
 
 ### Installation
@@ -31,291 +35,175 @@ git clone https://github.com/gabenotgave/ShuttleKit.git
 cd ShuttleKit
 
 # Backend setup
+cd api
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
 # Frontend setup
-cd web
+cd ../web
 npm install
 ```
 
 ### Configuration
 
-1. **Backend environment** — Copy `.env.example` to `.env` and add your API key:
+1. **Backend environment** (optional, only needed for schedule ingestion):
    ```bash
+   cd api
    cp .env.example .env
-   ```
-   Edit `.env`:
-   ```
-   INGESTION_API_KEY=your_api_key_here
-   MODEL=gemini/gemini-1.5-flash
+   # Edit .env with your LLM API key for schedule ingestion
    ```
 
-2. **Frontend environment** — Copy `web/.env.local.example` to `web/.env.local`:
+2. **Frontend environment**:
    ```bash
-   cp web/.env.local.example web/.env.local
-   ```
-   Edit `web/.env.local`:
-   ```
-   NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
+   cd web
+   cp .env.local.example .env.local
+   # Edit .env.local with:
+   #   - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY (required)
+   #   - NEXT_PUBLIC_API_URL (defaults to http://localhost:8000)
+   #   - NEXT_PUBLIC_CAMPUS_NAME (optional, for page title/metadata)
    ```
 
-3. **Campus configuration** — Update `config.json` with your campus name, timezone, routes, stops, and hours.
+3. **Campus configuration** — The `api/config.json` file contains your campus-specific routes, stops, and schedules. See [SETUP.md](SETUP.md) for:
+   - Automated extraction from schedule PDFs/images
+   - Manual configuration guide
 
 ### Running the Application
 
-**Backend (API):**
+**Backend:**
 ```bash
-uvicorn api.main:app --reload
+cd api
+uvicorn main:app --reload
 ```
-API available at `http://localhost:8000`. Interactive docs at `http://localhost:8000/docs`.
+API available at `http://localhost:8000` (docs at `/docs`)
 
 **Frontend:**
 ```bash
 cd web
 npm run dev
 ```
-Frontend available at `http://localhost:3000`.
+Frontend available at `http://localhost:3000`
 
 ---
 
-## API Reference
+## Documentation
 
-### `GET /api/config`
+### For Campus Deployment
 
-Returns campus configuration.
+**[SETUP.md](SETUP.md)** - Complete guide for deploying ShuttleKit at your campus:
+- Fork and customize the repository
+- Extract schedules from PDFs/images using AI
+- Configure routes, stops, and operating hours
+- Deploy backend and frontend to various platforms
+- Post-deployment configuration and troubleshooting
 
-**Response:**
-```json
-{
-  "campus": "Dickinson College",
-  "map_center": { "lat": 40.2009, "lng": -77.1969 }
-}
-```
+### For Developers
 
-### `GET /api/status`
+**[ARCHITECTURE.md](ARCHITECTURE.md)** - Technical architecture documentation:
+- System design and communication flow
+- Project structure and file organization
+- API endpoints and data models
+- Technology stack details
+- Deployment considerations and scaling
 
-Returns shuttle operational status based on current day/time.
-
-**Response:**
-```json
-{
-  "active": true,
-  "message": "The shuttle is currently running"
-}
-```
-
-### `GET /api/stops`
-
-Returns all stops with their routes.
-
-**Response:**
-```json
-{
-  "drayer-hall": {
-    "id": "drayer-hall",
-    "name": "DRAYER HALL",
-    "coords": [40.201, -77.197],
-    "routes": ["safety-shuttle"]
-  }
-}
-```
-
-### `GET /api/routes`
-
-Returns all routes with their paths for map display.
-
-**Response:**
-```json
-[
-  {
-    "id": "safety-shuttle",
-    "name": "Safety Shuttle",
-    "color": null,
-    "path": [[40.201, -77.197], [40.2002, -77.1986], ...]
-  }
-]
-```
-
-### `GET /api/plan`
-
-Returns a step-by-step itinerary from origin to destination.
-
-**Parameters:**
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `from_lat` | float | yes | Origin latitude |
-| `from_lng` | float | yes | Origin longitude |
-| `to_lat` | float | yes | Destination latitude |
-| `to_lng` | float | yes | Destination longitude |
-| `time` | string | no | Departure time as `HH:MM` (24-hour). Defaults to current time. |
-
-**Example request:**
-```
-GET /api/plan?from_lat=40.2009&from_lng=-77.1969&to_lat=40.1894&to_lng=-77.1943&time=18:10
-```
-
-**Example response:**
-```json
-{
-  "legs": [
-    {
-      "type": "walk",
-      "description": "Walk to DRAYER HALL",
-      "duration_minutes": 1,
-      "from": { "name": "Your location", "coords": [40.2009, -77.1969] },
-      "to": { "name": "DRAYER HALL", "coords": [40.201, -77.197] }
-    },
-    {
-      "type": "shuttle",
-      "description": "Safety Shuttle shuttle",
-      "departs": "18:45",
-      "arrives": "19:20",
-      "wait_minutes": 35,
-      "ride_minutes": 35,
-      "from": { "name": "DRAYER HALL", "coords": [40.201, -77.197] },
-      "to": { "name": "WALMART", "coords": [40.1894, -77.1943] }
-    },
-    {
-      "type": "walk",
-      "description": "Walk to destination",
-      "duration_minutes": 1,
-      "from": { "name": "WALMART", "coords": [40.1894, -77.1943] },
-      "to": { "name": "Your destination", "coords": [40.1894, -77.1943] }
-    }
-  ],
-  "total_minutes": 37,
-  "arrives_at": "19:21"
-}
-```
-
-**Error response:**
-```json
-{ "message": "No more shuttle trips tonight" }
-```
-
----
-
-## Schedule Ingestion
-
-ShuttleKit includes an automated ingestion tool that extracts shuttle schedules from images or PDFs using LLM vision models and optionally geocodes stop locations.
-
-### Prerequisites
-
-- Python dependencies: `litellm`, `geopy`, `python-dotenv`
-- API key for a vision-capable model (e.g., Gemini, GPT-4 Vision)
-
-### Setup
-
-1. Install additional dependencies:
-   ```bash
-   pip install litellm geopy python-dotenv
-   ```
-
-2. Configure your API key in `.env` (see Configuration section above)
-
-3. Place your schedule file (PDF, PNG, JPG, WEBP) in the `ingestion/` folder.
-
-### Usage
-
-```bash
-python ingestion/ingest.py <filename> --campus "Campus Name" --location "City, State" [--geocode]
-```
-
-**Arguments:**
-- `filename` — Schedule file in `ingestion/` folder (e.g., `schedule.png`)
-- `--campus` — Full campus name (e.g., `"Dickinson College"`)
-- `--location` — City/region for geocoding anchor (e.g., `"Carlisle, PA"`)
-- `--geocode` — (Optional) Enable geocoding to refine stop coordinates via OpenStreetMap
-
-**Example:**
-```bash
-python ingestion/ingest.py schedule.pdf --campus "Dickinson College" --location "Carlisle, PA" --geocode
-```
-
-**Output:**
-- Generates/overwrites `config.json` with extracted routes, stops, times, and coordinates
-- Without `--geocode`: Uses LLM-estimated coordinates
-- With `--geocode`: Attempts to geocode each stop via Nominatim (OpenStreetMap)
-
-**Important:** Always review the generated `config.json` for accuracy. The LLM may misinterpret schedules, and geocoding may return incorrect locations. Manual verification is recommended.
-
----
-
-## Testing
-
-Unit tests cover the geo and planning modules using pytest.
-
-```bash
-pytest tests/api/ -v
-```
-
-**Coverage:**
-- `api/geo.py` — Haversine distance, walk time, nearest stop sorting
-- `api/planning.py` — Time parsing/formatting, loop generation, wrap-around logic
-
----
-
-## Configuration
-
-Routes, stops, and hours are defined in `config.json` at the project root.
-
-**Structure:**
-```json
-{
-  "campus": "Your Campus Name",
-  "timezone": "America/New_York",
-  "routes": [
-    {
-      "id": "route-id",
-      "name": "Route Name",
-      "color": "#3b82f6",
-      "stops": [
-        {
-          "id": "stop-id",
-          "name": "STOP NAME",
-          "coords": [lat, lng],
-          "arrivals": ["18:00", "18:45", "19:30", ...]
-        }
-      ]
-    }
-  ],
-  "hours": {
-    "monday": { "start": "18:00", "end": "23:50" },
-    "tuesday": { "start": "18:00", "end": "23:50" }
-  }
-}
-```
-
-**Notes:**
-- All times use 24-hour format (`HH:MM`)
-- Loop interval and stop offsets are derived automatically from arrivals
-- Frontend fetches campus name and map center from the API
+**[CONTRIBUTING.md](CONTRIBUTING.md)** - Contribution guidelines:
+- Development setup
+- Code style and standards
+- Pull request process
+- Reporting issues and feature requests
 
 ---
 
 ## Project Structure
 
 ```
-api/
-  main.py        # FastAPI app and endpoints
-  geo.py         # Haversine distance and nearest-stop logic
-  planning.py    # Shuttle loop planning logic
-web/
-  app/           # Next.js app router pages
-  components/    # React components (map, search, itinerary, navbar)
-  lib/           # API client and utilities
-  public/        # Static assets
-tests/
-  api/           # pytest unit tests
-  postman/       # Postman collection
-config.json      # Route and stop definitions
+ShuttleKit/
+├── api/                      # Backend (FastAPI)
+│   ├── main.py              # API server and endpoints
+│   ├── geo.py               # Geospatial calculations (Haversine)
+│   ├── planning.py          # Route planning logic
+│   ├── config.json          # Campus configuration (routes, stops, schedules)
+│   ├── requirements.txt     # Python dependencies
+│   ├── ingestion/           # AI-powered schedule extraction
+│   └── tests/               # Unit tests
+│
+├── web/                     # Frontend (Next.js + TypeScript)
+│   ├── app/                 # Next.js app router pages
+│   ├── components/          # React components (map, search, itinerary)
+│   ├── lib/                 # API client and utilities
+│   └── package.json         # Node dependencies
+│
+├── SETUP.md                 # Campus deployment guide
+├── ARCHITECTURE.md          # Technical documentation
+├── CONTRIBUTING.md          # Contribution guidelines
+├── MIGRATION.md             # Upgrade guide
+└── LICENSE                  # MIT License
 ```
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed structure documentation.
+
+---
+
+## API Reference
+
+Full API documentation is available at `http://localhost:8000/docs` when running the backend.
+
+### Key Endpoints
+
+- `GET /api/config` — Campus configuration and map center
+- `GET /api/status` — Current shuttle operational status
+- `GET /api/stops` — All stops with their routes
+- `GET /api/routes` — All routes with paths for map display
+- `GET /api/plan` — Trip planning with walk + shuttle itinerary
+
+See the [interactive API docs](http://localhost:8000/docs) for detailed parameters and responses.
+
+---
+
+## Deployment
+
+ShuttleKit's decoupled architecture allows independent deployment of backend and frontend:
+
+### Backend Options
+- **Railway** - One-click deployment from GitHub
+- **Render** - Free tier available
+- **Fly.io** - Global edge deployment
+- **DigitalOcean App Platform** - Managed platform
+- **Self-hosted VPS** - Full control (Ubuntu/Debian)
+
+### Frontend Options
+- **Vercel** - Recommended for Next.js (free tier)
+- **Netlify** - Easy deployment with CDN
+- **Railway** - Full-stack on one platform
+- **Static hosting** - Any web server (nginx, S3, etc.)
+
+See [SETUP.md](SETUP.md) for step-by-step deployment guides for each platform.
+
+---
+
+## Testing
+
+```bash
+cd api
+pytest tests/ -v
+```
+
+Tests cover geospatial calculations, route planning logic, and API endpoints.
+
+---
+
+## Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to get started.
+
+---
+
+## AI Transparency
+
+This project was developed with assistance from AI tools. See [AI_USAGE.md](AI_USAGE.md) for full transparency about which AI models and tools were used for different aspects of development.
 
 ---
 
 ## License
 
-MIT
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.

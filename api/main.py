@@ -4,26 +4,28 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI, HTTPException, Query
-from datetime import datetime
-
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.geo import nearest_stops, walk_minutes
-from api.planning import fmt_hhmm, parse_hhmm, plan_shuttle
+from geo import nearest_stops, walk_minutes
+from planning import fmt_hhmm, parse_hhmm, plan_shuttle
 
 
 app = FastAPI(title="ShuttleKit API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:3000",  # Local development
+        # Add your production frontend URL here after deployment
+        # "https://your-frontend-domain.com",
+    ],
     allow_methods=["GET"],
     allow_headers=["*"],
 )
 
 
 def load_config() -> dict:
-    path = Path(__file__).parent.parent / "config.json"
+    path = Path(__file__).parent / "config.json"
     with open(path) as f:
         return json.load(f)
 

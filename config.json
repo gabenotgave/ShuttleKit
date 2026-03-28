@@ -11,8 +11,8 @@
           "id": "drayer-hall",
           "name": "DRAYER HALL",
           "coords": [
-            40.2009862,
-            -77.1970414
+            40.201,
+            -77.197
           ],
           "arrivals": [
             "06:00",
@@ -29,8 +29,8 @@
           "id": "witwer-allision",
           "name": "WITWER ALLISION",
           "coords": [
-            40.170664,
-            -77.016466
+            40.006,
+            -75.101
           ],
           "arrivals": [
             "06:05",
@@ -47,8 +47,8 @@
           "id": "morgan-circle",
           "name": "MORGAN CIRCLE",
           "coords": [
-            40.166986,
-            -77.017305
+            40.008,
+            -75.102
           ],
           "arrivals": [
             "06:10",
@@ -65,8 +65,8 @@
           "id": "gy-paking-lot",
           "name": "GY PAKING LOT",
           "coords": [
-            40.167812,
-            -77.017502
+            40.007,
+            -75.103
           ],
           "arrivals": [
             "06:15",
@@ -83,8 +83,8 @@
           "id": "mckenney-suites",
           "name": "MCKENNEY SUITES",
           "coords": [
-            40.2027212,
-            -77.1989752
+            40.2027,
+            -77.199
           ],
           "arrivals": [
             "06:20",
@@ -101,8 +101,8 @@
           "id": "factory-apts",
           "name": "FACTORY APTS",
           "coords": [
-            0.0,
-            0.0
+            40.003,
+            -75.106
           ],
           "arrivals": [
             "06:25",
@@ -117,10 +117,10 @@
         },
         {
           "id": "stuart-denny-hall",
-          "name": "STUART/DENNY HALL",
+          "name": "STUART/DE NNY HALL",
           "coords": [
-            40.16603,
-            -77.02237
+            40.002,
+            -75.107
           ],
           "arrivals": [
             "06:30",
@@ -137,8 +137,8 @@
           "id": "walmart",
           "name": "WALMART",
           "coords": [
-            40.1893587,
-            -77.1943407
+            40.1894,
+            -77.1943
           ],
           "arrivals": [
             "06:35",
@@ -156,6 +156,22 @@
   ],
   "hours": {
     "monday": {
+      "start": "06:00",
+      "end": "11:50"
+    },
+    "tuesday": {
+      "start": "06:00",
+      "end": "11:50"
+    },
+    "wednesday": {
+      "start": "06:00",
+      "end": "11:50"
+    },
+    "thursday": {
+      "start": "06:00",
+      "end": "11:50"
+    },
+    "friday": {
       "start": "06:00",
       "end": "11:50"
     }

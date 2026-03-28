@@ -28,7 +28,7 @@ The output MUST follow this EXACT schema. Do not add, remove, or rename any fiel
         {
           "id": "<kebab-case slug from stop name, e.g. drayer-hall>",
           "name": "<Stop name exactly as printed>",
-          "coords": [],
+          "coords": [0.0, 0.0],
           "arrivals": ["HH:MM", "HH:MM"]
         }
       ]
@@ -42,7 +42,7 @@ The output MUST follow this EXACT schema. Do not add, remove, or rename any fiel
 Rules:
 1. STOPS: List in the order the shuttle visits them based on the first departure cycle.
 2. ARRIVALS: Every scheduled time as a flat array in 24-hour "HH:MM" format. Convert AM/PM. Expand ranges into individual times.
-3. COORDS: Populate with your best-guess [latitude, longitude] for each stop based on the campus and stop name. Use decimal degrees. If you have no idea, use an empty array [].
+3. COORDS: You MUST populate coords with [latitude, longitude] for every stop. Use your best knowledge of the campus and stop name to estimate coordinates in decimal degrees. Never leave coords as an empty array — always provide your best guess. Round to 4 decimal places.
 4. CAMPUS: Leave as empty string "".
 5. ROUTES: Separate object for each named route. If only one unnamed route, use id "safety-shuttle" and name "Safety Shuttle".
 6. COLOR: Hex color if the document uses one for the route, otherwise null.
@@ -93,14 +93,6 @@ def round_coords(coords):
     if coords and len(coords) == 2:
         return [round(coords[0], 4), round(coords[1], 4)]
     return []
-
-
-def clear_all_coords(config):
-    """Set all stop coords to empty arrays."""
-    for route in config["routes"]:
-        for stop in route["stops"]:
-            stop["coords"] = []
-    return config
 
 
 def geocode_stops(config, location):
@@ -167,7 +159,7 @@ def geocode_stops(config, location):
         else:
             print(f"   {stop_name} — not found, keeping LLM coords")
 
-    # Only override coords when geocoding found a result; round LLM coords too
+    # Override with geocoded coords where found; round LLM coords for the rest
     for route in config["routes"]:
         for stop in route["stops"]:
             if stop["id"] in coords_cache:
@@ -191,8 +183,11 @@ def run(filename, campus, location, do_geocode):
     if do_geocode:
         config = geocode_stops(config, location)
     else:
-        config = clear_all_coords(config)
-        print("Skipping geocoding (use --geocode to enable)\n")
+        # Round LLM-provided coords, keep them intact
+        for route in config["routes"]:
+            for stop in route["stops"]:
+                stop["coords"] = round_coords(stop["coords"])
+        print("Skipping geocoding; keeping LLM coordinates (use --geocode to refine)\n")
 
     output_path = os.path.join(os.path.dirname(__file__), "..", "config.json")
     with open(output_path, "w") as f:
@@ -200,8 +195,7 @@ def run(filename, campus, location, do_geocode):
 
     print(f"Done! Saved to {output_path}")
 
-    if do_geocode:
-        print("Please review coordinates to ensure accuracy. You can modify the config.json file to make any corrections.")
+    print("Please review the data in config.json to ensure accuracy. You can modify the file to make any corrections.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Extract shuttle schedule from image/PDF")

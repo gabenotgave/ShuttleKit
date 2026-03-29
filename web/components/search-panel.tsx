@@ -77,7 +77,7 @@ export function SearchPanel({ onSearch, isLoading }: SearchPanelProps) {
     setToCoords(null)
   }
 
-  const canSubmit = !!fromCoords && !!toCoords
+  const canSubmit = Boolean(fromCoords && toCoords)
 
   return (
     <Card className="fixed top-18 left-4 right-4 z-40 p-4 shadow-lg md:left-4 md:right-auto md:w-96">
@@ -154,7 +154,7 @@ export function SearchPanel({ onSearch, isLoading }: SearchPanelProps) {
         </div>
 
         <div className="flex gap-2">
-          <Button type="submit" className="flex-1 cursor-pointer" disabled={isLoading || gettingLocation || !canSubmit}>
+          <Button type="submit" className="flex-1 cursor-pointer" disabled={!canSubmit || isLoading || gettingLocation}>
             {isLoading || gettingLocation ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />

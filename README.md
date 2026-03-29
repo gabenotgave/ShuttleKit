@@ -2,6 +2,8 @@
 
 A campus shuttle planning system with a FastAPI backend and Next.js frontend. Given a user's coordinates and destination, ShuttleKit finds the nearest stops, computes walk times using the Haversine formula, and returns a full itinerary with walk and shuttle legs displayed on an interactive map.
 
+**[📺 Watch Demo Video](https://youtu.be/QUwQsUJLQx8)**
+
 ---
 
 ## Features

@@ -81,6 +81,38 @@ def get_routes():
         })
     return routes
 
+
+@app.get("/api/schedule")
+def get_schedule():
+    """Full timetable per route: stops in loop order with arrival lists (config-driven)."""
+    try:
+        config = load_config()
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Schedule file not found")
+
+    routes_out = []
+    for route in config["routes"]:
+        sorted_stops = sorted(route["stops"], key=lambda s: s["arrivals"][0])
+        routes_out.append({
+            "id": route["id"],
+            "name": route["name"],
+            "color": route.get("color"),
+            "stops": [
+                {
+                    "id": stop["id"],
+                    "name": stop["name"],
+                    "arrivals": stop["arrivals"],
+                }
+                for stop in sorted_stops
+            ],
+        })
+
+    return {
+        "timezone": config["timezone"],
+        "hours": config["hours"],
+        "routes": routes_out,
+    }
+
 @app.get("/api/status")
 def get_status():
     config = load_config()

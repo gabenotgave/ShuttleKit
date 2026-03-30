@@ -80,8 +80,8 @@ export default function Home() {
     <main className="relative h-screen w-full">
       <Navbar schoolName={appConfig?.campus ?? ""} status={status} />
       
-      {/* Map fills the entire screen */}
-      <div className="absolute inset-0 pt-14">
+      {/* Map fills the screen; bottom inset leaves room for tab bar + safe area */}
+      <div className="absolute inset-0 pt-14 pb-[calc(3.5rem+max(0.35rem,env(safe-area-inset-bottom)))]">
         <MapDisplay plan={plan} userLocation={userLocation} mapCenter={appConfig?.map_center ?? null} />
       </div>
 

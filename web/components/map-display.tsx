@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useState, useEffect } from "react"
-import { GoogleMap, useJsApiLoader, Marker, OverlayView } from "@react-google-maps/api"
+import { GoogleMap, Marker, OverlayView } from "@react-google-maps/api"
 import { type PlanResponse } from "@/lib/shuttle-api"
 
 const containerStyle = {
@@ -28,15 +28,12 @@ interface MapDisplayProps {
   plan: PlanResponse | null
   userLocation: { lat: number; lng: number } | null
   mapCenter: { lat: number; lng: number } | null
+  isLoaded: boolean
+  loadError: Error | undefined
 }
 
-export function MapDisplay({ plan, userLocation, mapCenter }: MapDisplayProps) {
+export function MapDisplay({ plan, userLocation, mapCenter, isLoaded, loadError }: MapDisplayProps) {
   const [map, setMap] = useState<google.maps.Map | null>(null)
-
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
-    libraries: ["places"],
-  })
 
   const onLoad = useCallback((map: google.maps.Map) => {
     setMap(map)

@@ -5,18 +5,11 @@ import { ChevronUp, ChevronDown, Footprints, Bus, Clock, MapPin } from "lucide-r
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import type { PlanResponse, Leg } from "@/lib/shuttle-api"
+import { formatHhmm12h } from "@/lib/time-format"
 
 interface ItineraryPanelProps {
   plan: PlanResponse
   onClose: () => void
-}
-
-/** Convert "HH:MM" 24h to "H:MM AM/PM" */
-function to12h(hhmm: string): string {
-  const [h, m] = hhmm.split(":").map(Number)
-  const period = h < 12 ? "AM" : "PM"
-  const hour = h % 12 === 0 ? 12 : h % 12
-  return `${hour}:${String(m).padStart(2, "0")} ${period}`
 }
 
 /** Format a minute count as "Xh Ym" or "Y min" */
@@ -61,7 +54,7 @@ function LegDetails({ leg, index }: { leg: Leg; index: number }) {
             ) : (
               <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                {to12h(leg.departs)} – {to12h(leg.arrives)}
+                {formatHhmm12h(leg.departs)} – {formatHhmm12h(leg.arrives)}
               </span>
             )}
           </span>
@@ -91,7 +84,7 @@ export function ItineraryPanel({ plan, onClose }: ItineraryPanelProps) {
   const [expanded, setExpanded] = useState(true)
 
   return (
-    <Card className="fixed bottom-0 left-0 right-0 z-40 rounded-b-none shadow-lg border-b-0">
+    <Card className="fixed left-0 right-0 z-40 rounded-b-none shadow-lg border-b-0 bottom-[calc(3.5rem+max(0.35rem,env(safe-area-inset-bottom)))]">
       <div className="flex items-center justify-between p-4 border-b border-border">
         <div
           role="button"
@@ -108,7 +101,7 @@ export function ItineraryPanel({ plan, onClose }: ItineraryPanelProps) {
               {fmtDuration(plan.total_minutes)} total
             </p>
             <p className="text-sm text-muted-foreground">
-              Arrives at {to12h(plan.arrives_at)}
+              Arrives at {formatHhmm12h(plan.arrives_at)}
             </p>
           </div>
         </div>

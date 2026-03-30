@@ -120,6 +120,38 @@ export async function getConfig(): Promise<AppConfig | null> {
   }
 }
 
+export interface ScheduleStop {
+  id: string
+  name: string
+  arrivals: string[]
+}
+
+export interface ScheduleRoute {
+  id: string
+  name: string
+  color: string | null
+  stops: ScheduleStop[]
+}
+
+/** Day key -> { start, end } as HH:MM strings */
+export type ServiceHoursMap = Record<string, { start: string; end: string }>
+
+export interface ScheduleResponse {
+  timezone: string
+  hours: ServiceHoursMap
+  routes: ScheduleRoute[]
+}
+
+export async function getSchedule(): Promise<ScheduleResponse | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/schedule`)
+    if (!response.ok) return null
+    return response.json()
+  } catch {
+    return null
+  }
+}
+
 // Helper to check if response is an error
 export function isPlanError(response: PlanResponse | PlanError): response is PlanError {
   return "message" in response

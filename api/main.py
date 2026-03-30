@@ -152,12 +152,20 @@ def get_plan(
     config = load_config()
     tz = ZoneInfo(config["timezone"])
 
+    now = datetime.now(tz)
+
     # Resolve query time
     if time:
         query_minutes = parse_hhmm(time)
     else:
-        now = datetime.now(tz)
         query_minutes = now.hour * 60 + now.minute
+
+    day = now.strftime("%A").lower()
+    hours = config.get("hours") or {}
+    if day not in hours:
+        return {"message": "No shuttle service today"}
+
+    service_end_minutes = parse_hhmm(hours[day]["end"])
 
     all_stops = [s for r in config["routes"] for s in r["stops"]]
 
@@ -182,7 +190,9 @@ def get_plan(
     if not matched_route:
         return {"message": "No route connects the nearest stops to your locations"}
 
-    upcoming = plan_shuttle(matched_route, from_stop, to_stop, query_minutes)
+    upcoming = plan_shuttle(
+        matched_route, from_stop, to_stop, query_minutes, service_end_minutes
+    )
 
     if not upcoming:
         return {"message": "No more shuttle trips tonight"}
@@ -227,3 +237,4 @@ def get_plan(
         "total_minutes": total_min,
         "arrives_at": arrives_at,
     }
+    

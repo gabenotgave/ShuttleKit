@@ -20,13 +20,7 @@ export default function Home() {
   // Fetch shuttle status and config on mount
   useEffect(() => {
     getStatus().then(setStatus)
-    getConfig().then((config) => {
-      setAppConfig(config)
-      // Update document title with campus name
-      if (config?.campus) {
-        document.title = `${config.campus} ShuttleKit`
-      }
-    })
+    getConfig().then(setAppConfig)
   }, [])
 
   // Get user location on mount

@@ -20,7 +20,7 @@ async function getConfig(): Promise<{ campus: string; map_center: { lat: number;
   try {
     const response = await fetch(`${API_BASE_URL}/api/config`, { next: { revalidate: 3600 } })
     if (!response.ok) return null
-    return response.json()
+    return await response.json()
   } catch {
     return null
   }

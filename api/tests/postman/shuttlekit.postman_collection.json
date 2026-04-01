@@ -6,6 +6,23 @@
   },
   "item": [
     {
+      "name": "Config",
+      "item": [
+        {
+          "name": "Get campus config",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:8000/api/config",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["api", "config"]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Stops",
       "item": [
         {
@@ -34,6 +51,23 @@
               "host": ["localhost"],
               "port": "8000",
               "path": ["api", "routes"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Schedule",
+      "item": [
+        {
+          "name": "Get full schedule",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:8000/api/schedule",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["api", "schedule"]
             }
           }
         }
@@ -131,6 +165,33 @@
                 { "key": "to_lat", "value": "40.1899" },
                 { "key": "to_lng", "value": "-77.1946" }
               ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "item": [
+        {
+          "name": "Send message (requires MCP + LLM)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session_id\": \"demo-thread-1\",\n  \"message\": \"Is the shuttle running?\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/chat",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["api", "chat"]
             }
           }
         }

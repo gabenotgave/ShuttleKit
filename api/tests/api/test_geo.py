@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from unittest.mock import MagicMock, patch
 
-from geo import haversine_meters, walk_minutes, nearest_stops, geocode_addresses
+from shuttlekit.geo import haversine_meters, walk_minutes, nearest_stops, geocode_addresses
 
 
 # Known coords from config.json
@@ -80,22 +80,22 @@ class TestGeocodeAddresses:
         loc.longitude = lng
         return loc
 
-    @patch("geo.Nominatim")
-    @patch("geo.RateLimiter")
+    @patch("shuttlekit.geo.Nominatim")
+    @patch("shuttlekit.geo.RateLimiter")
     def test_returns_coords_for_known_address(self, mock_rl, mock_nom):
         mock_rl.return_value = lambda q: self._make_location(40.2009, -77.1969)
         result = geocode_addresses(["Drayer Hall, Dickinson College"])
         assert result["Drayer Hall, Dickinson College"] == [40.2009, -77.1969]
 
-    @patch("geo.Nominatim")
-    @patch("geo.RateLimiter")
+    @patch("shuttlekit.geo.Nominatim")
+    @patch("shuttlekit.geo.RateLimiter")
     def test_returns_none_for_unresolved_address(self, mock_rl, mock_nom):
         mock_rl.return_value = lambda q: None
         result = geocode_addresses(["totally fake address xyzzy"])
         assert result["totally fake address xyzzy"] is None
 
-    @patch("geo.Nominatim")
-    @patch("geo.RateLimiter")
+    @patch("shuttlekit.geo.Nominatim")
+    @patch("shuttlekit.geo.RateLimiter")
     def test_handles_multiple_addresses(self, mock_rl, mock_nom):
         locations = {
             "Address A": self._make_location(40.1, -77.1),
@@ -106,8 +106,8 @@ class TestGeocodeAddresses:
         assert result["Address A"] == [40.1, -77.1]
         assert result["Address B"] == [40.2, -77.2]
 
-    @patch("geo.Nominatim")
-    @patch("geo.RateLimiter")
+    @patch("shuttlekit.geo.Nominatim")
+    @patch("shuttlekit.geo.RateLimiter")
     def test_returns_none_on_exception(self, mock_rl, mock_nom):
         def raise_exc(q):
             raise Exception("network error")
@@ -115,14 +115,14 @@ class TestGeocodeAddresses:
         result = geocode_addresses(["Some Address"])
         assert result["Some Address"] is None
 
-    @patch("geo.Nominatim")
-    @patch("geo.RateLimiter")
+    @patch("shuttlekit.geo.Nominatim")
+    @patch("shuttlekit.geo.RateLimiter")
     def test_empty_input(self, mock_rl, mock_nom):
         result = geocode_addresses([])
         assert result == {}
 
-    @patch("geo.Nominatim")
-    @patch("geo.RateLimiter")
+    @patch("shuttlekit.geo.Nominatim")
+    @patch("shuttlekit.geo.RateLimiter")
     def test_coords_rounded_to_4_decimal_places(self, mock_rl, mock_nom):
         mock_rl.return_value = lambda q: self._make_location(40.123456789, -77.987654321)
         result = geocode_addresses(["Some Address"])

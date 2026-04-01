@@ -9,9 +9,33 @@ from geopy.extra.rate_limiter import RateLimiter
 import time
 
 load_dotenv()
-os.environ["GEMINI_API_KEY"] = os.getenv("INGESTION_API_KEY")
 
-MODEL = os.getenv("MODEL")
+
+def _ingestion_model() -> str | None:
+    return os.getenv("INGESTION_MODEL") or os.getenv("MODEL")
+
+
+def _route_ingestion_api_key(model: str | None, api_key: str | None) -> None:
+    """Map INGESTION_API_KEY into the env var LiteLLM reads for the chosen provider."""
+    if not api_key:
+        return
+    m = (model or "").strip().lower()
+    if m.startswith("openai/") or m.startswith("gpt-") or m.startswith("o1") or m.startswith("o3"):
+        os.environ["OPENAI_API_KEY"] = api_key
+    elif m.startswith("anthropic/") or "claude" in m:
+        os.environ["ANTHROPIC_API_KEY"] = api_key
+    elif m.startswith("groq/"):
+        os.environ["GROQ_API_KEY"] = api_key
+    elif m.startswith("gemini/") or m.startswith("vertex_ai/") or ("/" in m and m.split("/")[0] == "gemini"):
+        os.environ["GEMINI_API_KEY"] = api_key
+    else:
+        # Default matches previous single-provider behavior (Gemini vision)
+        os.environ["GEMINI_API_KEY"] = api_key
+
+
+_route_ingestion_api_key(_ingestion_model(), os.getenv("INGESTION_API_KEY"))
+
+MODEL = _ingestion_model()
 PROMPT = """You are a JSON extraction engine. You receive a campus safety shuttle schedule. Return ONLY a single valid JSON object — no markdown fences, no commentary, no preamble, no explanation. Raw JSON only.
 
 The output MUST follow this EXACT schema. Do not add, remove, or rename any fields. You MUST leave campus as an empty string:
@@ -71,6 +95,11 @@ def extract_schedule(filename):
 
     if ext not in mime_types:
         raise ValueError(f"Unsupported file type: {ext}")
+
+    if not MODEL:
+        raise ValueError(
+            "Set INGESTION_MODEL (or legacy MODEL) in .env — e.g. gemini/gemini-1.5-flash or openai/gpt-4o"
+        )
 
     with open(filepath, "rb") as f:
         b64 = base64.b64encode(f.read()).decode()

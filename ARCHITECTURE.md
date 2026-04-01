@@ -35,9 +35,15 @@ ShuttleKit is designed with a fully decoupled architecture, allowing the backend
 ```
 ShuttleKit/
 ├── api/                          # Backend (FastAPI)
-│   ├── main.py                   # API server and endpoints
-│   ├── geo.py                    # Geospatial calculations (Haversine)
-│   ├── planning.py               # Route planning logic
+│   ├── main.py                   # Uvicorn entry (`uvicorn main:app`)
+│   ├── mcp_server.py             # MCP SSE entry (`python mcp_server.py`)
+│   ├── shuttlekit/               # Application package
+│   │   ├── main.py               # FastAPI app and routes
+│   │   ├── geo.py                # Haversine, nearest stops, geocoding
+│   │   ├── planning.py           # Trip scheduling on loop routes
+│   │   ├── services.py           # Config + HTTP service helpers
+│   │   ├── mcp_server.py         # FastMCP tool definitions
+│   │   └── agent/                # LangGraph agent + MCP client
 │   ├── config.json               # Campus configuration
 │   ├── requirements.txt          # Python dependencies
 │   ├── .env.example              # Environment template
@@ -50,7 +56,8 @@ ShuttleKit/
 │   └── tests/                    # Unit tests
 │       ├── api/
 │       │   ├── test_geo.py
-│       │   └── test_planning.py
+│       │   ├── test_planning.py
+│       │   └── test_chat.py
 │       └── postman/
 │           └── *.postman_collection.json
 │
@@ -92,7 +99,7 @@ User Input (coordinates)
   → Frontend (search-panel.tsx)
   → API Client (shuttle-api.ts)
   → Backend API (/api/plan)
-  → Planning Logic (planning.py + geo.py)
+  → Planning Logic (`shuttlekit/planning.py` + `shuttlekit/geo.py`)
   → Response (itinerary JSON)
   → Frontend Display (itinerary-panel.tsx + map-display.tsx)
 ```
@@ -107,6 +114,18 @@ Page Load
   → Config Data (config.json)
   → Map Display (map-display.tsx with Google Maps)
 ```
+
+### 3. Shuttle assistant (optional)
+
+```
+User message + session_id
+  → POST /api/chat
+  → shuttlekit.agent (LangGraph + LLM)
+  → MCP tools over SSE (shuttlekit/mcp_server.py process)
+  → JSON { session_id, reply }
+```
+
+Run the MCP server separately (`python mcp_server.py` from `api/`) when using chat; configure `MCP_SSE_URL` / `MCP_PORT` in `api/.env`.
 
 ## Key Design Principles
 
@@ -124,18 +143,18 @@ Page Load
 - Easy customization for different campuses
 - Automated ingestion from schedule documents
 
-### 3. Stateless API
+### 3. REST layer and chat sessions
 
-- No session management or authentication (can be added)
-- Each request is independent
-- Horizontally scalable
-- Simple caching strategies
+- Most endpoints are stateless: each request is independent and needs no cookie or server session.
+- **`POST /api/chat`** uses a client-generated **`session_id`** so the LangGraph agent can continue a thread; checkpoint state is **in-process** (`MemorySaver`) unless you swap in a persistent checkpointer.
+- No authentication (can be added).
 
 ### 4. Environment-Based Configuration
 
 **Backend (`api/.env`):**
-- `INGESTION_API_KEY` - LLM API key for schedule extraction
-- `MODEL` - LLM model identifier
+- **Ingestion:** `INGESTION_MODEL`, `INGESTION_API_KEY` (see `api/ingestion/ingest.py`, `api/.env.example`)
+- **Chat agent:** `MODEL_NAME`, `PROVIDER`, provider API keys as needed; `MCP_PORT`, `MCP_SSE_URL` (MCP server must be running for chat)
+- See `api/.env.example` for the full list
 
 **Frontend (`web/.env.local`):**
 - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` - Google Maps API key
@@ -149,7 +168,9 @@ Page Load
 | `/api/status` | GET | Current shuttle operational status |
 | `/api/stops` | GET | All stops with routes |
 | `/api/routes` | GET | All routes with paths for map display |
+| `/api/schedule` | GET | Full timetable per route, hours, timezone |
 | `/api/plan` | GET | Trip planning with itinerary |
+| `/api/chat` | POST | LLM + MCP shuttle assistant (`session_id`, `message`) |
 
 See interactive docs at `http://localhost:8000/docs` when running the backend.
 
@@ -220,6 +241,7 @@ See interactive docs at `http://localhost:8000/docs` when running the backend.
 - **Geospatial**: Custom Haversine implementation
 - **Schedule Parsing**: LiteLLM + Vision models
 - **Geocoding**: Geopy + Nominatim (OpenStreetMap)
+- **Shuttle assistant (`/api/chat`)**: LangChain + LangGraph agent; tools invoked via **[MCP](https://modelcontextprotocol.io/)** over **SSE** using [FastMCP](https://github.com/jlowin/fastmcp) (separate process, default port `8001`; see [SETUP.md](SETUP.md#mcp-server-and-chat-assistant))
 - **Testing**: pytest
 
 ### Frontend
@@ -233,10 +255,11 @@ See interactive docs at `http://localhost:8000/docs` when running the backend.
 ## Deployment Considerations
 
 ### Backend
-- Stateless design allows horizontal scaling
+- Stateless design allows horizontal scaling for read-only and planning endpoints
 - No database required (config file-based)
 - Can run on serverless platforms (with config in environment)
 - CORS configuration needed for production frontend URL
+- **Chat**: requires a **second deployed process** (MCP over SSE) unless you disable `POST /api/chat`; the API container must reach MCP at `MCP_SSE_URL`
 
 ### Frontend
 - Static generation possible for most pages

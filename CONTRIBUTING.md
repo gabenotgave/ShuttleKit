@@ -32,7 +32,10 @@ npm install
 
 ### Running Tests
 
+From the **`api/`** directory (where `pytest.ini` lives):
+
 ```bash
+cd api
 pytest tests/api/ -v
 ```
 

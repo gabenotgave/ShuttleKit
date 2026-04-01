@@ -47,12 +47,9 @@ npm install
 
 ### Configuration
 
-1. **Backend environment** (optional, only needed for schedule ingestion):
-   ```bash
-   cd api
-   cp .env.example .env
-   # Edit .env with your LLM API key for schedule ingestion
-   ```
+1. **Backend environment** — copy `api/.env.example` to `api/.env` and set variables as needed:
+   - **Schedule ingestion** (optional): `INGESTION_MODEL`, `INGESTION_API_KEY` (see `api/.env.example`)
+   - **Chat assistant** (optional): `MODEL_NAME`, `PROVIDER`, provider API keys; **`MCP_PORT`** / **`MCP_SSE_URL`** when running [`POST /api/chat`](SETUP.md#mcp-server-and-chat-assistant)
 
 2. **Frontend environment**:
    ```bash
@@ -70,12 +67,14 @@ npm install
 
 ### Running the Application
 
-**Backend:**
+**Backend (map + REST API):**
 ```bash
 cd api
 uvicorn main:app --reload
 ```
 API available at `http://localhost:8000` (docs at `/docs`)
+
+**Shuttle assistant (`POST /api/chat`)** also needs the **MCP server** in a second terminal (FastMCP over SSE, default port `8001`). See **[SETUP.md — MCP server and chat assistant](SETUP.md#mcp-server-and-chat-assistant)** for what it does, environment variables, and production notes.
 
 **Frontend:**
 ```bash
@@ -94,6 +93,7 @@ Frontend available at `http://localhost:3000`
 - Fork and customize the repository
 - Extract schedules from PDFs/images using AI
 - Configure routes, stops, and operating hours
+- **[MCP server and chat assistant](SETUP.md#mcp-server-and-chat-assistant)** (two-process local setup, env vars, production)
 - Deploy backend and frontend to various platforms
 - Post-deployment configuration and troubleshooting
 
@@ -119,9 +119,9 @@ Frontend available at `http://localhost:3000`
 ```
 ShuttleKit/
 ├── api/                      # Backend (FastAPI)
-│   ├── main.py              # API server and endpoints
-│   ├── geo.py               # Geospatial calculations (Haversine)
-│   ├── planning.py          # Route planning logic
+│   ├── main.py              # Uvicorn entry (`uvicorn main:app`)
+│   ├── mcp_server.py        # MCP SSE entry (`python mcp_server.py`)
+│   ├── shuttlekit/          # Application package (API, services, agent, MCP)
 │   ├── config.json          # Campus configuration (routes, stops, schedules)
 │   ├── requirements.txt     # Python dependencies
 │   ├── ingestion/           # AI-powered schedule extraction
@@ -136,7 +136,6 @@ ShuttleKit/
 ├── SETUP.md                 # Campus deployment guide
 ├── ARCHITECTURE.md          # Technical documentation
 ├── CONTRIBUTING.md          # Contribution guidelines
-├── MIGRATION.md             # Upgrade guide
 └── LICENSE                  # MIT License
 ```
 
@@ -154,7 +153,9 @@ Full API documentation is available at `http://localhost:8000/docs` when running
 - `GET /api/status` — Current shuttle operational status
 - `GET /api/stops` — All stops with their routes
 - `GET /api/routes` — All routes with paths for map display
+- `GET /api/schedule` — Full timetable per route (arrivals, hours, timezone)
 - `GET /api/plan` — Trip planning with walk + shuttle itinerary
+- `POST /api/chat` — Shuttle assistant (LLM + MCP tools); body includes `session_id` and `message`
 
 See the [interactive API docs](http://localhost:8000/docs) for detailed parameters and responses.
 
@@ -185,7 +186,7 @@ See [SETUP.md](SETUP.md) for step-by-step deployment guides for each platform.
 
 ```bash
 cd api
-pytest tests/ -v
+pytest tests/api/ -v
 ```
 
 Tests cover geospatial calculations, route planning logic, and API endpoints.
@@ -198,7 +199,7 @@ ShuttleKit was created and developed by:
 
 - **Gabriel Arnold** - [arnolgab@dickinson.edu](mailto:arnolgab@dickinson.edu)
 - **Spencer Goodman** - [goodmasp@dickinson.edu](mailto:goodmasp@dickinson.edu)
-- **Edin Slawek** - [slaweks@dickinson.edu](mailto:slaweks@dickinson.edu)
+- **Eden Slawek** - [slaweks@dickinson.edu](mailto:slaweks@dickinson.edu)
 
 ---
 

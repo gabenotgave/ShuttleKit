@@ -3,12 +3,17 @@ from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from geo import nearest_stops, walk_minutes
-from planning import fmt_hhmm, parse_hhmm, plan_shuttle
+from .geo import nearest_stops, walk_minutes
+from .planning import fmt_hhmm, parse_hhmm, plan_shuttle
+
+
+def _config_path() -> Path:
+    # api/config.json — package lives in api/shuttlekit/
+    return Path(__file__).resolve().parent.parent / "config.json"
 
 
 def load_config() -> dict:
-    path = Path(__file__).parent / "config.json"
+    path = _config_path()
     with open(path) as f:
         return json.load(f)
 
@@ -21,6 +26,17 @@ def load_config_service() -> dict:
     return {
         "campus": config["campus"],
         "map_center": {"lat": avg_lat, "lng": avg_lng},
+    }
+
+
+def get_agent_prompt_context(config: dict) -> dict:
+    """Campus name, IANA timezone, and current local time (for agent system prompts)."""
+    tz = ZoneInfo(config["timezone"])
+    now = datetime.now(tz)
+    return {
+        "campus": config["campus"],
+        "timezone": config["timezone"],
+        "now_local": now.strftime("%A, %Y-%m-%d %H:%M:%S %Z"),
     }
 
 
@@ -197,4 +213,3 @@ def get_plan_service(
         "total_minutes": total_min,
         "arrives_at": arrives_at,
     }
-    

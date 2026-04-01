@@ -7,7 +7,8 @@ This guide walks you through forking ShuttleKit, customizing it for your campus 
 1. [Fork and Clone](#fork-and-clone)
 2. [Configure for Your Campus](#configure-for-your-campus)
 3. [Local Development](#local-development)
-4. [Deployment](#deployment)
+4. [MCP server and chat assistant](#mcp-server-and-chat-assistant)
+5. [Deployment](#deployment)
 
 ---
 
@@ -49,17 +50,14 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Edit `api/.env` and add your LLM API key:
+Edit `api/.env` and set ingestion variables:
 
 ```env
+INGESTION_MODEL=gemini/gemini-1.5-flash
 INGESTION_API_KEY=your_api_key_here
-MODEL=gemini/gemini-1.5-flash
 ```
 
-Supported models:
-- `gemini/gemini-1.5-flash` (Google Gemini - recommended, free tier available)
-- `gpt-4-vision-preview` (OpenAI GPT-4 Vision)
-- Any vision-capable model supported by [LiteLLM](https://docs.litellm.ai/docs/providers)
+`ingest.py` passes `INGESTION_MODEL` to [LiteLLM](https://docs.litellm.ai/docs/providers) and maps `INGESTION_API_KEY` to the right provider env var (`GEMINI_*`, `OPENAI_*`, etc.). Use a **vision- or document-capable** model; PDF/image behavior varies by provider. Defaults that work well: **`gemini/gemini-1.5-flash`**. The legacy **`MODEL`** env var is still read if `INGESTION_MODEL` is unset.
 
 #### 3. Run Ingestion
 
@@ -186,8 +184,53 @@ Frontend available at `http://localhost:3000`
 
 ```bash
 cd api
-pytest tests/ -v
+pytest tests/api/ -v
 ```
+
+---
+
+## MCP server and chat assistant
+
+The map and trip planner use only the **FastAPI** process. The **shuttle assistant** (`POST /api/chat`) additionally needs an **[MCP](https://modelcontextprotocol.io/)** (Model Context Protocol) server: it exposes shuttle data and planning as **tools** the LLM can call. ShuttleKit runs that server with **[FastMCP](https://github.com/jlowin/fastmcp)** over **SSE** (Server-Sent Events) on a **separate port** from the HTTP API.
+
+**What the MCP server provides:** tools such as live status, stops, routes, full schedule, trip planning between coordinates, stop lookup by ID, and address geocoding. The implementation lives in `api/shuttlekit/mcp_server.py`; `api/mcp_server.py` is the CLI entry.
+
+### Run locally (two terminals)
+
+Use the same virtualenv and `api/.env` for both processes.
+
+**Terminal 1 — MCP (start this first):**
+
+```bash
+cd api
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+python mcp_server.py
+```
+
+By default the server listens on **port 8001** (see `MCP_PORT`).
+
+**Terminal 2 — FastAPI:**
+
+```bash
+cd api
+source .venv/bin/activate
+uvicorn main:app --reload
+```
+
+The API stays on **port 8000**. The chat agent connects to MCP at **`MCP_SSE_URL`** (default `http://127.0.0.1:8001/sse`).
+
+### Environment variables (`api/.env`)
+
+| Variable | Purpose |
+|----------|---------|
+| `MCP_PORT` | Port the MCP process binds (default `8001`). Avoid clashing with uvicorn (`8000`). |
+| `MCP_SSE_URL` | Full SSE URL the LangGraph agent uses; must point at your running MCP server (path is `/sse`). |
+
+For chat, also set **`MODEL_NAME`**, **`PROVIDER`**, and the API key for your provider (see `api/.env.example`). Without a running MCP server, **`POST /api/chat`** typically fails with a **503** transport error.
+
+### Production
+
+Deploy the MCP process alongside the API (second service or background worker) with matching **`MCP_PORT`** / **`MCP_SSE_URL`** reachable from the API container. If MCP is omitted, omit or disable the chat feature in your product.
 
 ---
 
@@ -397,7 +440,7 @@ server {
 
 ### Update CORS Settings
 
-After deploying the frontend, update the backend CORS settings in `api/main.py`:
+After deploying the frontend, update the backend CORS settings in `api/shuttlekit/main.py`:
 
 ```python
 app.add_middleware(
@@ -406,7 +449,7 @@ app.add_middleware(
         "http://localhost:3000",  # Local development
         "https://your-frontend-domain.com",  # Production
     ],
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 ```
@@ -438,12 +481,18 @@ NEXT_PUBLIC_API_URL=https://your-api-domain.com
 - Check file permissions
 
 **CORS errors:**
-- Add your frontend domain to `allow_origins` in `api/main.py`
+- Add your frontend domain to `allow_origins` in `api/shuttlekit/main.py`
 - Redeploy backend
 
 **Timezone issues:**
 - Verify timezone string in `config.json` matches IANA format
 - Test with: `python -c "from zoneinfo import ZoneInfo; print(ZoneInfo('Your/Timezone'))"`
+
+**Chat returns 503 / “MCP” or transport error:**
+- Ensure the MCP server is running (`python mcp_server.py` from `api/` with the same venv)
+- Check `MCP_SSE_URL` matches where MCP is listening (default `http://127.0.0.1:8001/sse`)
+- Confirm `MCP_PORT` matches the port in that URL
+- Verify LLM env vars (`MODEL_NAME`, `PROVIDER`, provider API keys) in `api/.env`
 
 ### Frontend Issues
 

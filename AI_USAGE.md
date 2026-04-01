@@ -19,11 +19,11 @@ ShuttleKit was developed with assistance from various AI tools and models. This 
   - SETUP.md
   - ARCHITECTURE.md
   - CONTRIBUTING.md
-  - MIGRATION.md
   - This file (AI_USAGE.md)
 - **Unit Tests**: Complete generation of pytest unit tests for:
   - `api/tests/api/test_geo.py` - Geospatial calculation tests
   - `api/tests/api/test_planning.py` - Route planning logic tests
+  - `api/tests/api/test_chat.py` - Chat API endpoint tests
 - **API Testing**: Full generation of Postman collection for API endpoint testing
   - `api/tests/postman/shuttlekit.postman_collection.json`
 - **Test Coverage**: Ensuring comprehensive test coverage for core backend functionality
@@ -55,8 +55,8 @@ ShuttleKit was developed with assistance from various AI tools and models. This 
 While AI tools provided assistance, the following aspects involved substantial human input and decision-making:
 
 ### Core Logic
-- **Geospatial Calculations** (`api/geo.py`): Haversine formula implementation and nearest-stop algorithm
-- **Route Planning** (`api/planning.py`): Shuttle loop scheduling and trip planning logic
+- **Geospatial Calculations** (`api/shuttlekit/geo.py`): Haversine formula implementation and nearest-stop algorithm
+- **Route Planning** (`api/shuttlekit/planning.py`): Shuttle loop scheduling and trip planning logic
 - **API Design**: Endpoint structure and response formats
 
 ### Configuration

@@ -2,12 +2,13 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Map, CalendarDays } from "lucide-react"
+import { Map, CalendarDays, MessageSquare } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const tabs = [
   { href: "/", label: "Map", icon: Map },
   { href: "/schedule", label: "Schedule", icon: CalendarDays },
+  { href: "/chat", label: "Chat", icon: MessageSquare },
 ] as const
 
 export function BottomTabBar() {

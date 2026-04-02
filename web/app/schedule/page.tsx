@@ -56,6 +56,14 @@ function arrivalAt(stop: ScheduleStop, tripIndex: number): string | null {
   return stop.arrivals[tripIndex] ?? null
 }
 
+/** Prefer server `arrivals_12` when present so UI matches API / agent. */
+function arrivalAt12(stop: ScheduleStop, tripIndex: number): string | null {
+  const pre = stop.arrivals_12?.[tripIndex]
+  if (pre != null) return pre
+  const raw = arrivalAt(stop, tripIndex)
+  return raw != null ? formatHhmm12h(raw) : null
+}
+
 function RouteTripCards({ route }: { route: ScheduleRoute }) {
   const n = maxTripCount(route.stops)
   if (n === 0) {
@@ -70,10 +78,10 @@ function RouteTripCards({ route }: { route: ScheduleRoute }) {
     <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory">
       {Array.from({ length: n }, (_, tripIndex) => {
         const anchor = route.stops[0]
-        const startTime = anchor ? arrivalAt(anchor, tripIndex) : null
+        const startTime12 = anchor ? arrivalAt12(anchor, tripIndex) : null
         const title =
-          startTime != null
-            ? `${formatHhmm12h(startTime)} · ${anchor.name}`
+          startTime12 != null
+            ? `${startTime12} · ${anchor.name}`
             : `Loop ${tripIndex + 1}`
 
         return (
@@ -93,7 +101,7 @@ function RouteTripCards({ route }: { route: ScheduleRoute }) {
             <CardContent className="px-4 pt-0">
               <ol className="space-y-0">
                 {route.stops.map((stop, si) => {
-                  const raw = arrivalAt(stop, tripIndex)
+                  const t12 = arrivalAt12(stop, tripIndex)
                   return (
                     <li key={stop.id} className="flex gap-3">
                       <div className="flex flex-col items-center w-6 shrink-0">
@@ -107,9 +115,9 @@ function RouteTripCards({ route }: { route: ScheduleRoute }) {
                       <div className="flex-1 min-w-0 pb-3">
                         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                           <span className="font-medium text-foreground">{stop.name}</span>
-                          {raw != null ? (
+                          {t12 != null ? (
                             <span className="text-sm tabular-nums text-muted-foreground">
-                              {formatHhmm12h(raw)}
+                              {t12}
                             </span>
                           ) : (
                             <span className="text-sm text-muted-foreground">—</span>
@@ -147,9 +155,9 @@ function RouteStopList({ route }: { route: ScheduleRoute }) {
                 <p className="text-sm text-muted-foreground mt-1">No times listed</p>
               ) : (
                 <div className="flex flex-wrap gap-1.5 mt-2">
-                  {stop.arrivals.map((t) => (
-                    <Badge key={t} variant="secondary" className="tabular-nums font-normal">
-                      {formatHhmm12h(t)}
+                  {stop.arrivals.map((t, i) => (
+                    <Badge key={`${t}-${i}`} variant="secondary" className="tabular-nums font-normal">
+                      {stop.arrivals_12?.[i] ?? formatHhmm12h(t)}
                     </Badge>
                   ))}
                 </div>

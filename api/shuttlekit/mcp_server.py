@@ -6,10 +6,7 @@ from mcp.server.fastmcp import FastMCP
 from shuttlekit.geo import geocode_addresses
 from shuttlekit.services import (
     load_config,
-    get_stops_service,
-    get_routes_service,
     get_schedule_service,
-    get_status_service,
     get_plan_service,
 )
 
@@ -24,43 +21,18 @@ _config = load_config()
 
 
 @mcp.tool()
-def get_status() -> dict:
-    """
-    Check whether the shuttle is currently running. Returns active (bool) and a
-    human-readable message. Call this first when a user asks if the shuttle is
-    running, available, or operating right now.
-    """
-    return get_status_service(_config)
-
-
-@mcp.tool()
-def get_stops() -> dict:
-    """
-    Get all shuttle stops, keyed by stop ID. Each stop includes its name,
-    coordinates [lat, lng], and which route IDs serve it. Use this to look up
-    stop IDs or coordinates when a user refers to a stop by name, or to list
-    all available stops.
-    """
-    return get_stops_service(_config)
-
-
-@mcp.tool()
-def get_routes() -> dict:
-    """
-    Get all shuttle routes with their IDs, names, colors, and ordered path
-    coordinates. Use this when a user asks about available routes, route names,
-    or wants to know where a route goes.
-    """
-    return get_routes_service(_config)
-
-
-@mcp.tool()
 def get_schedule() -> dict:
     """
-    Get the full shuttle timetable — all routes with their stops and every
-    scheduled arrival time in HH:MM (24-hour) format. Also includes operating
-    hours per day and the campus timezone. Use this when a user asks what time
-    the shuttle arrives somewhere, how often it runs, or what the full schedule is.
+    Single source for shuttle data: campus name, whether service is active right now,
+    per-day operating hours, timezone, every stop (id, name, coordinates, route ids),
+    and every route with its timetable. Each route includes `runs`: each run is one
+    full loop in stop order — all `arrival` times in one run are the same physical
+    trip. Use `stops` to match user language to stop ids and to read coordinates.
+    Each stop has `arrivals` (24h) and `arrivals_12` (US 12-hour); each `runs` entry
+    lists `arrival` + `arrival_12` per stop; `hours` includes `start_12` / `end_12`.
+    Prefer those `*_12` fields for user-facing times. `quick_next` only gives the next
+    upcoming arrival per stop (`next_arrival_12`, `run_index_for_next`) — use `runs`
+    or `arrivals_12` for full lists, with one `run.index` per trip.
     """
     return get_schedule_service(_config)
 
@@ -71,16 +43,15 @@ def get_trip(
     from_lng: float,
     to_lat: float,
     to_lng: float,
-    time: str) -> dict:
+    time: str = "",
+) -> dict:
     """
-    Plan a shuttle trip between two locations given as coordinates. Returns a
-    multi-leg itinerary with walk and shuttle segments, including departure time,
-    wait time, ride duration, and estimated arrival. The time parameter is optional
-    in HH:MM 24-hour format and defaults to now if omitted.
+    Plan a shuttle trip between two lat/lng points. Returns walk + shuttle + walk
+    legs with wait time, ride duration, and arrival. `time` is optional query time
+    in HH:MM (24-hour); omit or pass empty for now.
 
-    This tool requires lat/lng coordinates — if the user provides an address or
-    place name instead, call get_coords_by_addresses first to resolve coordinates.
-    If they refer to a stop by name, call get_stops first to find its coordinates.
+    For shuttle stops by name, get coordinates from `get_schedule` → `stops` (by id).
+    For street addresses or off-network places, use `get_coords_by_addresses` first.
     """
     return get_plan_service(
         _config,
@@ -88,32 +59,16 @@ def get_trip(
         from_lng=from_lng,
         to_lat=to_lat,
         to_lng=to_lng,
-        time=time
+        time=time,
     )
-
-
-@mcp.tool()
-def get_coords_by_stops(stop_ids: list[str]) -> dict:
-    """
-    Look up full stop details (name, coordinates, routes) for a list of stop IDs.
-    Use this when you already know the stop ID and need its coordinates to pass
-    to get_trip, or to confirm details about a specific stop.
-    """
-    stops_data = get_stops_service(_config)
-    result = {}
-    for stop_id in stop_ids:
-        if stop_id in stops_data:
-            result[stop_id] = stops_data[stop_id]
-    return result
 
 
 @mcp.tool()
 def get_coords_by_addresses(addresses: list[str]) -> dict:
     """
-    Geocode a list of free-text addresses or place names into coordinates.
-    Returns a mapping of address -> [lat, lng], or null if a location could not
-    be resolved. Use this when a user provides a location by name or address
-    rather than coordinates, before calling get_trip.
+    Geocode free-text addresses or place names to [lat, lng]. Use for locations
+    that are not shuttle stops. For stop names on the shuttle, use `get_schedule`
+    and match against `stops` instead — geocoding can return unrelated global hits.
     """
     return geocode_addresses(addresses)
 

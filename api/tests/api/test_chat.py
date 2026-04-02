@@ -16,9 +16,31 @@ def client():
     return TestClient(app)
 
 
+def test_get_chat_model(client):
+    response = client.get("/api/chat/model")
+    assert response.status_code == 200
+    assert "model_display" in response.json()
+    assert isinstance(response.json()["model_display"], str)
+
+
+def test_get_chat_history_unknown_session_returns_empty_messages(client):
+    response = client.get("/api/chat/history", params={"session_id": "unknown-thread-xyz"})
+    assert response.status_code == 200
+    assert response.json() == {"session_id": "unknown-thread-xyz", "messages": []}
+
+
+def test_get_chat_history_validation_empty_session_id(client):
+    response = client.get("/api/chat/history", params={"session_id": ""})
+    assert response.status_code == 422
+
+
 @patch("shuttlekit.main.invoke_shuttle_agent", new_callable=AsyncMock)
 def test_post_chat_returns_reply_and_session_id(mock_invoke, client):
-    mock_invoke.return_value = {"session_id": "thread-abc", "reply": "Next shuttle at 3pm."}
+    mock_invoke.return_value = {
+        "session_id": "thread-abc",
+        "reply": "Next shuttle at 3pm.",
+        "model_display": "gpt-4o (openai)",
+    }
     response = client.post(
         "/api/chat",
         json={"session_id": "thread-abc", "message": "When is the next bus?"},
@@ -27,13 +49,14 @@ def test_post_chat_returns_reply_and_session_id(mock_invoke, client):
     assert response.json() == {
         "session_id": "thread-abc",
         "reply": "Next shuttle at 3pm.",
+        "model_display": "gpt-4o (openai)",
     }
     mock_invoke.assert_called_once_with("thread-abc", "When is the next bus?")
 
 
 @patch("shuttlekit.main.invoke_shuttle_agent", new_callable=AsyncMock)
 def test_post_chat_passes_through_session_id(mock_invoke, client):
-    mock_invoke.return_value = {"session_id": "s", "reply": "ok"}
+    mock_invoke.return_value = {"session_id": "s", "reply": "ok", "model_display": "m"}
     client.post("/api/chat", json={"session_id": "s", "message": "x"})
     mock_invoke.assert_called_once_with("s", "x")
 

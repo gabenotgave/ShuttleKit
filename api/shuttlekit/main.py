@@ -1,8 +1,17 @@
+import asyncio
+from contextlib import asynccontextmanager
+from typing import Any
+
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from shuttlekit.agent.shuttle_agent import invoke_shuttle_agent
+from shuttlekit.agent.shuttle_agent import (
+    get_chat_history_for_session,
+    get_chat_model_display,
+    invoke_shuttle_agent,
+    run_chat_prune_loop,
+)
 from shuttlekit.services import (
     load_config,
     load_config_service,
@@ -14,7 +23,18 @@ from shuttlekit.services import (
 )
 
 
-app = FastAPI(title="ShuttleKit API")
+@asynccontextmanager
+async def _lifespan(_: FastAPI):
+    prune_task = asyncio.create_task(run_chat_prune_loop())
+    yield
+    prune_task.cancel()
+    try:
+        await prune_task
+    except asyncio.CancelledError:
+        pass
+
+
+app = FastAPI(title="ShuttleKit API", lifespan=_lifespan)
 
 
 app.add_middleware(
@@ -37,6 +57,18 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     session_id: str
     reply: str
+    model_display: str = Field(
+        ...,
+        description="Configured LLM label (MODEL_NAME / PROVIDER) for UI disclaimers",
+    )
+
+
+class ChatHistoryResponse(BaseModel):
+    session_id: str
+    messages: list[dict[str, Any]] = Field(
+        ...,
+        description="LangGraph thread messages (user / assistant / tool); in-memory only",
+    )
 
 
 def _load_config():
@@ -73,6 +105,18 @@ def get_schedule():
 @app.get("/api/status")
 def get_status():
     return get_status_service(_load_config())
+
+
+@app.get("/api/chat/model")
+def get_chat_model():
+    """Model label for the assistant UI (same env as the agent; no LLM call)."""
+    return {"model_display": get_chat_model_display()}
+
+
+@app.get("/api/chat/history", response_model=ChatHistoryResponse)
+def get_chat_history(session_id: str = Query(..., min_length=1, description="Client thread id")):
+    """Return all messages stored for this chat session (LangGraph MemorySaver checkpointer)."""
+    return ChatHistoryResponse(**get_chat_history_for_session(session_id))
 
 
 @app.post("/api/chat", response_model=ChatResponse)

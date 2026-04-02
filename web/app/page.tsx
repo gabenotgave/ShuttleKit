@@ -88,7 +88,7 @@ export default function Home() {
       <Navbar schoolName={appConfig?.campus ?? ""} status={status} />
       
       {/* Map fills the screen; bottom inset leaves room for tab bar + safe area */}
-      <div className="absolute inset-0 pt-14 pb-[calc(3.5rem+max(0.35rem,env(safe-area-inset-bottom)))]">
+      <div className="absolute inset-0 pt-[calc(3.5rem+var(--sk-disruption-banner,0px))] pb-[calc(3.5rem+max(0.35rem,env(safe-area-inset-bottom)))]">
         <MapDisplay plan={plan} userLocation={userLocation} mapCenter={appConfig?.map_center ?? null} isLoaded={isLoaded} loadError={loadError} />
       </div>
 

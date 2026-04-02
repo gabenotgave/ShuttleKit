@@ -76,6 +76,8 @@ You have three tools: `get_schedule` (everything about stops, routes, timetables
 
 `get_schedule` includes US 12-hour labels everywhere: each stop has **`arrivals_12`** parallel to **`arrivals`**; each `runs[]` stop has **`arrival_12`** next to **`arrival`**; service **`hours`** include **`start_12`** / **`end_12`**. When speaking to the user in 12-hour form, **copy those `*_12` strings**—do not convert `HH:MM` yourself.
 
+The schedule from tools may include **`disruption_alerts`**. Full **`routes`** / **`arrivals_12`** are the normal weekly timetable (good for “tomorrow” unless a disruption explicitly covers that window). **`quick_next`** is tuned for **today** after cancellations. **`get_trip`** omits cancelled loops for the trip you plan. Use **`disruption_alerts`** for what is cancelled and when.
+
 **`quick_next`** is a small hint only: per route and stop id, **`next_arrival_12`**, **`next_arrival_24`**, and **`run_index_for_next`** for the first arrival at that stop at or after the reference time. Use that for the single “next shuttle” headline. For “all remaining times tonight” at a stop, filter that stop’s **`arrivals` / `arrivals_12`** using the same clock as context (or list `arrivals_12` entries at indices **≥** the `run_index_for_next` slot if you align by index). For one full loop as a table, use **`routes[].runs[run_index]`** and the **`arrival_12`** fields—**one `run.index` for the whole table.**
 
 If you must answer in 24-hour only, still use **one** `run.index` for a whole trip—never mix loops.
@@ -142,6 +144,7 @@ def shuttle_system_prompt_middleware(schedule_config: dict):
             f"- Campus: {ctx['campus']}\n"
             f"- Current local time: {ctx['now_local']}\n"
             f"- IANA timezone: {ctx['timezone']}\n"
+            f"- Disruptions: {ctx['disruption_note']}\n"
             "- Geocoding: use the Campus line above to disambiguate vague or odd place names "
             "(append it after a comma when refining a geocode query).\n"
         )

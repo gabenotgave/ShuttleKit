@@ -15,6 +15,7 @@ def plan_shuttle(
     to_stop: dict,
     query_minutes: int,
     service_end_minutes: int | None = None,
+    cancelled_run_indices=None,
 ) -> list:
     """Return up to two upcoming shuttle trips between from_stop and to_stop.
     Returns empty list if no trips remain today.
@@ -33,11 +34,14 @@ def plan_shuttle(
 
     upcoming = []
     loop_start = first_dep
+    k = 0
     while loop_start <= last_dep:
         departs = loop_start + from_offset
         arrives = loop_start + to_offset + (interval if wraps else 0)
         if departs >= query_minutes:
-            upcoming.append({"departs": departs, "arrives": arrives})
+            if cancelled_run_indices is None or k not in cancelled_run_indices:
+                upcoming.append({"departs": departs, "arrives": arrives})
+        k += 1
         loop_start += interval
 
     if service_end_minutes is not None:

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { BottomTabBar } from '@/components/bottom-tab-bar'
+import { DisruptionBanner } from '@/components/disruption-banner'
 import './globals.css'
 
 const geistSans = Geist({ 
@@ -45,6 +46,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
+        <DisruptionBanner />
         {children}
         <BottomTabBar />
         <Analytics />

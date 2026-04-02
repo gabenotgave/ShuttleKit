@@ -13,6 +13,9 @@ const tabs = [
 
 export function BottomTabBar() {
   const pathname = usePathname()
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    return null
+  }
 
   return (
     <nav

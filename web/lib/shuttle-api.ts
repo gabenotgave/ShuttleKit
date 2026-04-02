@@ -323,3 +323,106 @@ export async function postChat(sessionId: string, message: string): Promise<Post
 export function isPlanError(response: PlanResponse | PlanError): response is PlanError {
   return "message" in response
 }
+
+/** Public GET /api/disruptions (banner) */
+export interface DisruptionAlertRow {
+  id: string
+  route_id?: string | null
+  message: string
+  start_local: string
+  end_local: string
+}
+
+export interface DisruptionsPublic {
+  active: DisruptionAlertRow[]
+  upcoming: DisruptionAlertRow[]
+}
+
+export async function getDisruptionsPublic(): Promise<DisruptionsPublic> {
+  const response = await fetch(`${API_BASE_URL}/api/disruptions`)
+  if (!response.ok) {
+    return { active: [], upcoming: [] }
+  }
+  const data: unknown = await response.json()
+  if (
+    data &&
+    typeof data === "object" &&
+    "active" in data &&
+    "upcoming" in data
+  ) {
+    const d = data as { active: unknown; upcoming: unknown }
+    return {
+      active: Array.isArray(d.active) ? (d.active as DisruptionAlertRow[]) : [],
+      upcoming: Array.isArray(d.upcoming)
+        ? (d.upcoming as DisruptionAlertRow[])
+        : [],
+    }
+  }
+  return { active: [], upcoming: [] }
+}
+
+export interface DisruptionStored {
+  id: string
+  route_id?: string | null
+  kind?: string
+  message: string
+  start_local: string
+  end_local: string
+}
+
+export async function getDisruptionsAdmin(
+  token: string
+): Promise<{ disruptions: DisruptionStored[] } | null> {
+  const response = await fetch(`${API_BASE_URL}/api/disruptions`, {
+    headers: { "X-Shuttle-Admin-Token": token },
+  })
+  if (!response.ok) return null
+  const data: unknown = await response.json()
+  if (data && typeof data === "object" && "disruptions" in data) {
+    const raw = (data as { disruptions: unknown }).disruptions
+    return {
+      disruptions: Array.isArray(raw) ? (raw as DisruptionStored[]) : [],
+    }
+  }
+  return null
+}
+
+export async function postDisruption(
+  token: string,
+  body: {
+    route_id?: string | null
+    start_local: string
+    end_local: string
+    message: string
+  }
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const response = await fetch(`${API_BASE_URL}/api/disruptions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Shuttle-Admin-Token": token,
+    },
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) {
+    const err: unknown = await response.json().catch(() => ({}))
+    let detail = response.statusText
+    if (err && typeof err === "object" && "detail" in err) {
+      const d = (err as { detail: unknown }).detail
+      if (typeof d === "string") detail = d
+    }
+    return { ok: false, error: detail }
+  }
+  return { ok: true }
+}
+
+export async function deleteDisruption(
+  token: string,
+  id: string
+): Promise<boolean> {
+  const response = await fetch(`${API_BASE_URL}/api/disruptions/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: { "X-Shuttle-Admin-Token": token },
+  })
+  return response.ok
+}

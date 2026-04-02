@@ -182,7 +182,7 @@ export function SearchPanel({ onSearch, isLoading, isLoaded, loadError: _loadErr
       {/* Invisible div required to construct PlacesService */}
       <div ref={mapDivRef} style={{ display: "none" }} />
 
-      <Card className="fixed top-18 left-4 right-4 z-40 p-4 shadow-lg md:left-4 md:right-auto md:w-96">
+      <Card className="fixed left-4 right-4 z-40 p-4 shadow-lg md:left-4 md:right-auto md:w-96 top-[calc(var(--sk-disruption-banner,0px)+3.5rem+1rem)]">
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="space-y-2">
             {/* Origin */}

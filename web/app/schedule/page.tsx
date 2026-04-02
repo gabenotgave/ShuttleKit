@@ -282,7 +282,7 @@ export default function SchedulePage() {
     <main className="min-h-screen flex flex-col bg-background">
       <Navbar schoolName={appConfig?.campus ?? ""} status={status} />
 
-      <div className="flex-1 overflow-y-auto pt-14 pb-[calc(3.5rem+max(0.35rem,env(safe-area-inset-bottom)))]">
+      <div className="flex-1 overflow-y-auto pt-[calc(3.5rem+var(--sk-disruption-banner,0px))] pb-[calc(3.5rem+max(0.35rem,env(safe-area-inset-bottom)))]">
         <div className="mx-auto max-w-2xl px-4 py-6 space-y-6">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">

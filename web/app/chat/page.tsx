@@ -187,7 +187,7 @@ export default function ChatPage() {
     <main className="min-h-screen flex flex-col bg-background">
       <Navbar schoolName={appConfig?.campus ?? ""} status={status} />
 
-      <div className="flex flex-1 flex-col min-h-0 pt-14 pb-[calc(3.5rem+max(0.35rem,env(safe-area-inset-bottom)))]">
+      <div className="flex flex-1 flex-col min-h-0 pt-[calc(3.5rem+var(--sk-disruption-banner,0px))] pb-[calc(3.5rem+max(0.35rem,env(safe-area-inset-bottom)))]">
         <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col min-h-0 px-4">
           <div className="flex shrink-0 items-start justify-between gap-3 py-4">
             <div className="flex items-center gap-3 min-w-0">

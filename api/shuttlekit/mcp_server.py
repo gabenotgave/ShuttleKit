@@ -30,11 +30,13 @@ def get_schedule() -> dict:
     trip. Use `stops` to match user language to stop ids and to read coordinates.
     Each stop has `arrivals` (24h) and `arrivals_12` (US 12-hour); each `runs` entry
     lists `arrival` + `arrival_12` per stop; `hours` includes `start_12` / `end_12`.
-    Prefer those `*_12` fields for user-facing times. `quick_next` only gives the next
-    upcoming arrival per stop (`next_arrival_12`, `run_index_for_next`) — use `runs`
-    or `arrivals_12` for full lists, with one `run.index` per trip.
+    Prefer those `*_12` fields for user-facing times. `quick_next` reflects **today**
+    after cancellations (next arrival hints). Full `routes` / `runs` / `arrivals_12` are
+    the recurring weekly timetable—use them for any day unless `disruption_alerts` says
+    otherwise. `get_trip` applies cancellations for the requested trip time.
+    `disruption_alerts`: active/upcoming windows (optional `route_id`, `message`).
     """
-    return get_schedule_service(_config)
+    return get_schedule_service(_config, apply_disruptions=True)
 
 
 @mcp.tool()

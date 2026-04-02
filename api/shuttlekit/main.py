@@ -1,8 +1,9 @@
 import asyncio
+import os
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -13,13 +14,17 @@ from shuttlekit.agent.shuttle_agent import (
     run_chat_prune_loop,
 )
 from shuttlekit.services import (
-    load_config,
-    load_config_service,
-    get_stops_service,
+    add_disruption_row,
+    delete_disruption_row,
+    get_disruptions_public,
+    get_plan_service,
     get_routes_service,
     get_schedule_service,
     get_status_service,
-    get_plan_service,
+    get_stops_service,
+    load_config,
+    load_config_service,
+    load_disruptions,
 )
 
 
@@ -44,7 +49,7 @@ app.add_middleware(
         # Add your production frontend URL here after deployment
         # "https://your-frontend-domain.com",
     ],
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -61,6 +66,23 @@ class ChatResponse(BaseModel):
         ...,
         description="Configured LLM label (MODEL_NAME / PROVIDER) for UI disclaimers",
     )
+
+
+class DisruptionCreate(BaseModel):
+    route_id: str | None = Field(
+        default=None,
+        description="Shuttle route id from config; omit for all routes",
+    )
+    start_local: str = Field(..., description="ISO datetime (timezone-aware or campus-local)")
+    end_local: str = Field(..., description="ISO datetime (timezone-aware or campus-local)")
+    message: str = Field(default="", description="Banner / user-facing note")
+
+
+def _admin_ok(token: str | None) -> bool:
+    expected = os.getenv("SHUTTLE_ADMIN_PASSPHRASE", "").strip()
+    if not expected:
+        return False
+    return token is not None and token.strip() == expected
 
 
 class ChatHistoryResponse(BaseModel):
@@ -105,6 +127,48 @@ def get_schedule():
 @app.get("/api/status")
 def get_status():
     return get_status_service(_load_config())
+
+
+@app.get("/api/disruptions")
+def get_disruptions(
+    x_shuttle_admin_token: str | None = Header(None, alias="X-Shuttle-Admin-Token"),
+):
+    """
+    Public: active + upcoming (24h) for the site banner.
+    With valid `X-Shuttle-Admin-Token`, returns the full stored list for /admin.
+    """
+    cfg = _load_config()
+    if _admin_ok(x_shuttle_admin_token):
+        return {"disruptions": load_disruptions()}
+    return get_disruptions_public(cfg)
+
+
+@app.post("/api/disruptions")
+def post_disruption(
+    body: DisruptionCreate,
+    x_shuttle_admin_token: str | None = Header(None, alias="X-Shuttle-Admin-Token"),
+):
+    if not _admin_ok(x_shuttle_admin_token):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    row = add_disruption_row(
+        route_id=body.route_id,
+        start_local=body.start_local,
+        end_local=body.end_local,
+        message=body.message,
+    )
+    return row
+
+
+@app.delete("/api/disruptions/{disruption_id}")
+def remove_disruption(
+    disruption_id: str,
+    x_shuttle_admin_token: str | None = Header(None, alias="X-Shuttle-Admin-Token"),
+):
+    if not _admin_ok(x_shuttle_admin_token):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    if not delete_disruption_row(disruption_id):
+        raise HTTPException(status_code=404, detail="Not found")
+    return {"ok": True}
 
 
 @app.get("/api/chat/model")

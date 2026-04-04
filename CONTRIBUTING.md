@@ -42,7 +42,7 @@ pytest tests/api/ -v
 ## Code Style
 
 - Python: Follow PEP 8 guidelines
-- TypeScript/React: Follow the existing code style (Prettier/ESLint configs)
+- TypeScript/React: Follow the existing code style (ESLint in `web/`)
 - Write clear, descriptive variable and function names
 - Add comments for complex logic
 - Keep functions focused and modular

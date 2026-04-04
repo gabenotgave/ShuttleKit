@@ -193,7 +193,7 @@ pytest tests/api/ -v
 
 The map and trip planner use only the **FastAPI** process. The **shuttle assistant** (`POST /api/chat`) additionally needs an **[MCP](https://modelcontextprotocol.io/)** (Model Context Protocol) server: it exposes shuttle data and planning as **tools** the LLM can call. ShuttleKit runs that server with **[FastMCP](https://github.com/jlowin/fastmcp)** over **SSE** (Server-Sent Events) on a **separate port** from the HTTP API.
 
-**What the MCP server provides:** tools such as live status, stops, routes, full schedule, trip planning between coordinates, stop lookup by ID, and address geocoding. The implementation lives in `api/shuttlekit/mcp_server.py`; `api/mcp_server.py` is the CLI entry.
+**What the MCP server provides:** three FastMCP tools in `api/shuttlekit/mcp_server.py`: **`get_schedule`** (aggregates campus name, live service status, hours, timezone, stops with coordinates, routes, full timetable, disruption hints), **`get_trip`** (plan between two lat/lng points), and **`get_coords_by_addresses`** (geocode free-text addresses). `api/mcp_server.py` is the CLI entry and is what uvicorn spawns when the chatbot feature is on.
 
 ### Run locally
 
@@ -209,7 +209,7 @@ uvicorn main:app --reload
 
 The API stays on **port 8000**; MCP listens on **`MCP_PORT`** (default **8001**). The chat agent connects to MCP at **`MCP_SSE_URL`** (default `http://127.0.0.1:8001/sse`). Stop uvicorn to stop both.
 
-If the chatbot feature is **disabled**, MCP is not started automatically (and `POST /api/chat` is off).
+If the chatbot feature is **disabled**, MCP is not started automatically and **`/api/chat*`** routes return **404** (not **503**).
 
 ### Environment variables (`api/.env`)
 
@@ -218,7 +218,7 @@ If the chatbot feature is **disabled**, MCP is not started automatically (and `P
 | `MCP_PORT` | Port the MCP process binds (default `8001`). Avoid clashing with uvicorn (`8000`). |
 | `MCP_SSE_URL` | Full SSE URL the LangGraph agent uses; must point at your running MCP server (path is `/sse`). |
 
-For chat, also set **`MODEL_NAME`**, **`PROVIDER`**, and the API key for your provider (see `api/.env.example`). Without a running MCP server, **`POST /api/chat`** typically fails with a **503** transport error.
+For chat, also set **`MODEL_NAME`**, **`PROVIDER`**, and the API key for your provider (see `api/.env.example`). If the chatbot is **on** but MCP failed to start or is unreachable, **`POST /api/chat`** can fail with **503** (transport error). If the chatbot is **off**, you get **404** instead.
 
 ### Production
 
@@ -380,8 +380,7 @@ Vercel automatically handles builds, SSL, and CDN.
 3. Connect GitHub repository
 4. Configure:
    - **Base directory**: `web`
-   - **Build command**: `npm run build`
-   - **Publish directory**: `web/.next`
+   - **Build command**: `npm run build` (Netlify’s Next.js runtime handles the output; no manual “static export” folder)
 5. Add environment variables in Site settings
 6. Deploy
 
@@ -396,35 +395,18 @@ Vercel automatically handles builds, SSL, and CDN.
 4. Add environment variables
 5. Deploy
 
-#### Option 4: Self-Hosted (Static Export)
+#### Option 4: Self-Hosted (Node server)
 
-For static hosting on any web server:
+This repo’s frontend is a standard **Next.js** app (SSR + API routes to your backend). Build and run with Node, or put a reverse proxy in front of `npm start`:
 
 ```bash
 cd web
-
-# Build for production
+npm install
 npm run build
-npm run export  # If using static export
-
-# Deploy the 'out' directory to any static host
-# Examples: nginx, Apache, S3, GitHub Pages
+npm start   # serves on port 3000 by default
 ```
 
-Configure nginx:
-
-```nginx
-server {
-    listen 80;
-    server_name yourdomain.com;
-    root /var/www/shuttlekit;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-}
-```
+For process management (systemd, PM2, etc.), run `npm start` from `web/` with `NODE_ENV=production` and the same `NEXT_PUBLIC_*` variables as cloud deploys. Static export (`next export`) is **not** configured in this project; use Vercel/Netlify/Railway or a Node host unless you add an export pipeline yourself.
 
 ---
 
@@ -479,6 +461,9 @@ NEXT_PUBLIC_API_URL=https://your-api-domain.com
 **Timezone issues:**
 - Verify timezone string in `config.json` matches IANA format
 - Test with: `python -c "from zoneinfo import ZoneInfo; print(ZoneInfo('Your/Timezone'))"`
+
+**Chat returns 404:**
+- **`FEATURE_FLAGS_CHATBOT`** is off — enable it or omit it (default is on) if you want `/api/chat*`.
 
 **Chat returns 503 / “MCP” or transport error:**
 - Ensure **`FEATURE_FLAGS_CHATBOT`** is enabled and uvicorn started the MCP child (check logs), or run `python mcp_server.py` from `api/` only if you are not relying on the built-in spawn (avoid two listeners on the same `MCP_PORT`).

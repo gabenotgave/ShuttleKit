@@ -1,6 +1,5 @@
 "use client"
 
-import { Bus } from "lucide-react"
 import { ShuttleStatus } from "../lib/shuttle-api"
 
 interface NavbarProps {
@@ -18,15 +17,23 @@ export function Navbar({ schoolName = "", status }: NavbarProps) {
     <nav className="fixed top-[var(--sk-disruption-banner,0px)] left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
       <div className="flex h-14 items-center gap-2 px-3 sm:gap-3 sm:px-4">
         <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary">
-            <Bus className="h-5 w-5 text-primary-foreground" />
-          </div>
+          <img
+            src="/ShuttleKit_Icon_Black.png"
+            alt="ShuttleKit"
+            width={40}
+            height={40}
+            className="h-10 w-10 shrink-0 rounded-lg object-contain"
+            fetchPriority="high"
+            decoding="async"
+          />
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline gap-x-1.5 gap-y-0">
               <span className="truncate text-base font-semibold text-foreground sm:text-lg">
                 {schoolName}
               </span>
-              <span className="shrink-0 text-xs font-medium text-muted-foreground sm:text-sm">ShuttleKit</span>
+              <span className="shrink-0 text-xs font-medium text-muted-foreground sm:text-sm">
+                ShuttleKit
+              </span>
             </div>
           </div>
         </div>

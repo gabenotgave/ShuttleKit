@@ -36,38 +36,40 @@ export async function generateMetadata(): Promise<Metadata> {
   const title = `${campus} ShuttleKit`
   const description = `Plan your shuttle trips around ${campus}. Find routes, schedules, and real-time shuttle information.`
 
+  const metadataBase = new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'),
+  )
+
   return {
+    metadataBase,
     title,
     description,
     generator: 'ShuttleKit',
     keywords: [campus, 'shuttle', 'bus', 'transit', 'transportation', 'campus shuttle', 'college shuttle'],
     icons: {
-      icon: [
-        {
-          url: '/icon-light-32x32.png',
-          media: '(prefers-color-scheme: light)',
-        },
-        {
-          url: '/icon-dark-32x32.png',
-          media: '(prefers-color-scheme: dark)',
-        },
-        {
-          url: '/icon.svg',
-          type: 'image/svg+xml',
-        },
-      ],
-      apple: '/apple-icon.png',
+      icon: '/ShuttleKit_Icon_Black.png',
+      apple: '/ShuttleKit_Icon_Black.png',
     },
     openGraph: {
       title,
       description,
       type: 'website',
       siteName: 'ShuttleKit',
+      images: [
+        {
+          url: '/ShuttleKit_Black.png',
+          width: 2522,
+          height: 1499,
+          alt: 'ShuttleKit',
+        },
+      ],
     },
     twitter: {
-      card: 'summary',
+      card: 'summary_large_image',
       title,
       description,
+      images: ['/ShuttleKit_Black.png'],
     },
     ...(config?.map_center && {
       other: {

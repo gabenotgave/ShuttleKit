@@ -13,6 +13,8 @@ from shuttlekit.agent.shuttle_agent import (
     invoke_shuttle_agent,
     run_chat_prune_loop,
 )
+from shuttlekit.embedded_mcp import start_if_enabled as _embedded_mcp_start, stop as _embedded_mcp_stop
+from shuttlekit.feature_flags import is_chatbot_enabled, public_features_dict
 from shuttlekit.services import (
     add_disruption_row,
     delete_disruption_row,
@@ -30,13 +32,18 @@ from shuttlekit.services import (
 
 @asynccontextmanager
 async def _lifespan(_: FastAPI):
-    prune_task = asyncio.create_task(run_chat_prune_loop())
+    await _embedded_mcp_start()
+    prune_task: asyncio.Task[None] | None = None
+    if is_chatbot_enabled():
+        prune_task = asyncio.create_task(run_chat_prune_loop())
     yield
-    prune_task.cancel()
-    try:
-        await prune_task
-    except asyncio.CancelledError:
-        pass
+    _embedded_mcp_stop()
+    if prune_task is not None:
+        prune_task.cancel()
+        try:
+            await prune_task
+        except asyncio.CancelledError:
+            pass
 
 
 app = FastAPI(title="ShuttleKit API", lifespan=_lifespan)
@@ -85,6 +92,11 @@ def _admin_ok(token: str | None) -> bool:
     return token is not None and token.strip() == expected
 
 
+def _require_chatbot_enabled() -> None:
+    if not is_chatbot_enabled():
+        raise HTTPException(status_code=404, detail="Not found")
+
+
 class ChatHistoryResponse(BaseModel):
     session_id: str
     messages: list[dict[str, Any]] = Field(
@@ -106,6 +118,12 @@ def get_config():
         return load_config_service()
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="Schedule file not found")
+
+
+@app.get("/api/features")
+def get_features():
+    """Whitelisted deployment toggles for the web app (see shuttlekit.feature_flags)."""
+    return public_features_dict()
 
 
 @app.get("/api/stops")
@@ -174,12 +192,14 @@ def remove_disruption(
 @app.get("/api/chat/model")
 def get_chat_model():
     """Model label for the assistant UI (same env as the agent; no LLM call)."""
+    _require_chatbot_enabled()
     return {"model_display": get_chat_model_display()}
 
 
 @app.get("/api/chat/history", response_model=ChatHistoryResponse)
 def get_chat_history(session_id: str = Query(..., min_length=1, description="Client thread id")):
     """Return all messages stored for this chat session (LangGraph MemorySaver checkpointer)."""
+    _require_chatbot_enabled()
     return ChatHistoryResponse(**get_chat_history_for_session(session_id))
 
 
@@ -188,6 +208,7 @@ async def post_chat(body: ChatRequest):
     """
     Run one shuttle agent turn (MCP tools + LLM). Reuse `session_id` to continue the thread.
     """
+    _require_chatbot_enabled()
     try:
         result = await invoke_shuttle_agent(body.session_id, body.message)
         return ChatResponse(**result)

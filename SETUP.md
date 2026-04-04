@@ -195,29 +195,21 @@ The map and trip planner use only the **FastAPI** process. The **shuttle assista
 
 **What the MCP server provides:** tools such as live status, stops, routes, full schedule, trip planning between coordinates, stop lookup by ID, and address geocoding. The implementation lives in `api/shuttlekit/mcp_server.py`; `api/mcp_server.py` is the CLI entry.
 
-### Run locally (two terminals)
+### Run locally
 
-Use the same virtualenv and `api/.env` for both processes.
+Use the same virtualenv and `api/.env`.
 
-**Terminal 1 — MCP (start this first):**
+With **`FEATURE_FLAGS_CHATBOT` enabled** (see `.env.example`), **`uvicorn` starts `mcp_server.py` for you** as a child process. One terminal is enough:
 
 ```bash
 cd api
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
-python mcp_server.py
-```
-
-By default the server listens on **port 8001** (see `MCP_PORT`).
-
-**Terminal 2 — FastAPI:**
-
-```bash
-cd api
-source .venv/bin/activate
 uvicorn main:app --reload
 ```
 
-The API stays on **port 8000**. The chat agent connects to MCP at **`MCP_SSE_URL`** (default `http://127.0.0.1:8001/sse`).
+The API stays on **port 8000**; MCP listens on **`MCP_PORT`** (default **8001**). The chat agent connects to MCP at **`MCP_SSE_URL`** (default `http://127.0.0.1:8001/sse`). Stop uvicorn to stop both.
+
+If the chatbot feature is **disabled**, MCP is not started automatically (and `POST /api/chat` is off).
 
 ### Environment variables (`api/.env`)
 
@@ -230,7 +222,7 @@ For chat, also set **`MODEL_NAME`**, **`PROVIDER`**, and the API key for your pr
 
 ### Production
 
-Deploy the MCP process alongside the API (second service or background worker) with matching **`MCP_PORT`** / **`MCP_SSE_URL`** reachable from the API container. If MCP is omitted, omit or disable the chat feature in your product.
+With chatbot enabled, the API process starts MCP locally; ensure **`MCP_SSE_URL`** is reachable from the agent (same host/port as in production). If MCP is omitted, disable the chat feature (`FEATURE_FLAGS_CHATBOT=false`).
 
 ---
 
@@ -489,7 +481,7 @@ NEXT_PUBLIC_API_URL=https://your-api-domain.com
 - Test with: `python -c "from zoneinfo import ZoneInfo; print(ZoneInfo('Your/Timezone'))"`
 
 **Chat returns 503 / “MCP” or transport error:**
-- Ensure the MCP server is running (`python mcp_server.py` from `api/` with the same venv)
+- Ensure **`FEATURE_FLAGS_CHATBOT`** is enabled and uvicorn started the MCP child (check logs), or run `python mcp_server.py` from `api/` only if you are not relying on the built-in spawn (avoid two listeners on the same `MCP_PORT`).
 - Check `MCP_SSE_URL` matches where MCP is listening (default `http://127.0.0.1:8001/sse`)
 - Confirm `MCP_PORT` matches the port in that URL
 - Verify LLM env vars (`MODEL_NAME`, `PROVIDER`, provider API keys) in `api/.env`

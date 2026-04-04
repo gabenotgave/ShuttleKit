@@ -120,6 +120,23 @@ export async function getConfig(): Promise<AppConfig | null> {
   }
 }
 
+/** GET /api/features — boolean flags by name (whatever the backend returns). */
+export type FeatureFlags = Record<string, boolean>
+
+/**
+ * Pass `init` from a Server Component for Next.js Data Cache hints, e.g. `{ next: { revalidate: false } }` or `{ next: { revalidate: 3600 } }`.
+ * Throws if the request fails or the response is not OK.
+ */
+export async function getFeatures(
+  init?: RequestInit & { next?: { revalidate?: number | false } },
+): Promise<FeatureFlags> {
+  const response = await fetch(`${API_BASE_URL}/api/features`, init)
+  if (!response.ok) {
+    throw new Error(`GET /api/features failed: ${response.status}`)
+  }
+  return (await response.json()) as FeatureFlags
+}
+
 export interface ScheduleStop {
   id: string
   name: string

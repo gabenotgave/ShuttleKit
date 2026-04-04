@@ -11,11 +11,19 @@ const tabs = [
   { href: "/chat", label: "Chat", icon: MessageSquare },
 ] as const
 
-export function BottomTabBar() {
+interface BottomTabBarProps {
+  /** From server layout; same cached GET /api/features as /chat layout */
+  chatbotEnabled: boolean
+}
+
+export function BottomTabBar({ chatbotEnabled }: BottomTabBarProps) {
   const pathname = usePathname()
+
   if (pathname === "/admin" || pathname.startsWith("/admin/")) {
     return null
   }
+
+  const visibleTabs = chatbotEnabled ? tabs : tabs.filter((t) => t.href !== "/chat")
 
   return (
     <nav
@@ -23,7 +31,7 @@ export function BottomTabBar() {
       aria-label="Primary"
     >
       <div className="mx-auto flex h-14 max-w-lg items-stretch justify-around px-2">
-        {tabs.map(({ href, label, icon: Icon }) => {
+        {visibleTabs.map(({ href, label, icon: Icon }) => {
           const active =
             href === "/"
               ? pathname === "/" || pathname === ""

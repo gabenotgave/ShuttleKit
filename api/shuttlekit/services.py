@@ -474,6 +474,8 @@ def get_plan_service(
     walk_to_min = walk_minutes(from_lat, from_lng, from_stop["coords"][0], from_stop["coords"][1])
     walk_from_min = walk_minutes(to_stop["coords"][0], to_stop["coords"][1], to_lat, to_lng)
     ride_min = arrives_min - departs_min
+    # Wait at the boarding stop after you arrive (excludes walking time to the stop)
+    wait_at_stop_min = max(0, departs_min - query_minutes - walk_to_min)
     total_min = (departs_min - query_minutes) + ride_min + walk_from_min
     arrives_at = fmt_hhmm(query_minutes + total_min)
 
@@ -491,7 +493,7 @@ def get_plan_service(
                 "description": f"{matched_route['name']} shuttle",
                 "departs": fmt_hhmm(departs_min),
                 "arrives": fmt_hhmm(arrives_min),
-                "wait_minutes": departs_min - query_minutes,
+                "wait_minutes": wait_at_stop_min,
                 "ride_minutes": ride_min,
                 "from": {"name": from_stop["name"], "coords": from_stop["coords"]},
                 "to": {"name": to_stop["name"], "coords": to_stop["coords"]},

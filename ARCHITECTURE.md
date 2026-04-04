@@ -125,7 +125,7 @@ User message + session_id
   → JSON { session_id, reply }
 ```
 
-Run the MCP server separately (`python mcp_server.py` from `api/`) when using chat; configure `MCP_SSE_URL` / `MCP_PORT` in `api/.env`.
+With chat enabled (`FEATURE_FLAGS_CHATBOT`), uvicorn starts `mcp_server.py` as a child process. Configure `MCP_SSE_URL` / `MCP_PORT` in `api/.env`.
 
 ## Key Design Principles
 
@@ -241,7 +241,7 @@ See interactive docs at `http://localhost:8000/docs` when running the backend.
 - **Geospatial**: Custom Haversine implementation
 - **Schedule Parsing**: LiteLLM + Vision models
 - **Geocoding**: Geopy + Nominatim (OpenStreetMap)
-- **Shuttle assistant (`/api/chat`)**: LangChain + LangGraph agent; tools invoked via **[MCP](https://modelcontextprotocol.io/)** over **SSE** using [FastMCP](https://github.com/jlowin/fastmcp) (separate process, default port `8001`; see [SETUP.md](SETUP.md#mcp-server-and-chat-assistant))
+- **Shuttle assistant (`/api/chat`)**: LangChain + LangGraph agent; tools invoked via **[MCP](https://modelcontextprotocol.io/)** over **SSE** using [FastMCP](https://github.com/jlowin/fastmcp) (child process when chatbot feature is on; default port `8001`; see [SETUP.md](SETUP.md#mcp-server-and-chat-assistant))
 - **Testing**: pytest
 
 ### Frontend
@@ -259,7 +259,7 @@ See interactive docs at `http://localhost:8000/docs` when running the backend.
 - No database required (config file-based)
 - Can run on serverless platforms (with config in environment)
 - CORS configuration needed for production frontend URL
-- **Chat**: requires a **second deployed process** (MCP over SSE) unless you disable `POST /api/chat`; the API container must reach MCP at `MCP_SSE_URL`
+- **Chat**: MCP over SSE (child of uvicorn when `FEATURE_FLAGS_CHATBOT` is on); the API must reach MCP at `MCP_SSE_URL`, or disable chat via feature flags
 
 ### Frontend
 - Static generation possible for most pages

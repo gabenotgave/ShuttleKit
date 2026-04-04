@@ -27,13 +27,7 @@ API will be available at `http://localhost:8000` — interactive docs at `http:/
 
 The shuttle assistant calls **MCP tools** (status, stops, routes, schedule, trip plan, geocoding) over **SSE**. Those tools are served by a **separate process** from uvicorn.
 
-**Start MCP** (second terminal, same venv):
-
-```bash
-cd api   # repository: ShuttleKit/api
-source .venv/bin/activate
-python mcp_server.py
-```
+When **`FEATURE_FLAGS_CHATBOT`** is enabled (see `.env.example`), **`uvicorn main:app` also runs `mcp_server.py`** as a child process. Stop uvicorn to stop both. If the chatbot feature is off, MCP is not started.
 
 - Default **port `8001`** (`MCP_PORT` in `.env`). Keep **uvicorn on 8000** so they do not clash.
 - **`MCP_SSE_URL`** (default `http://127.0.0.1:8001/sse`) is what the LangGraph agent uses; it must match where MCP is listening.

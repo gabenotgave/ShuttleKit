@@ -156,7 +156,7 @@ def shuttle_system_prompt_middleware(schedule_config: dict):
 async def trim_history_for_model(request: ModelRequest, handler):
     trimmed = trim_messages(
         list(request.messages),
-        max_tokens=50000,
+        max_tokens=24000,
         strategy="last",
         token_counter="approximate",
         include_system=True,

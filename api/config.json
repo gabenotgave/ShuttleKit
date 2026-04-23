@@ -11,7 +11,7 @@
           "id": "drayer-hall",
           "name": "DRAYER HALL",
           "coords": [
-            40.2009, -77.1968
+            40.20096270646453, -77.19681536759516
           ],
           "arrivals": [
             "18:00",
@@ -28,7 +28,7 @@
           "id": "witwer-allision",
           "name": "WITWER ALLISION",
           "coords": [
-            40.2002, -77.1986
+            40.20017222363924, -77.1985874953327
           ],
           "arrivals": [
             "18:05",
@@ -45,7 +45,7 @@
           "id": "morgan-circle",
           "name": "MORGAN CIRCLE",
           "coords": [
-            40.2016, -77.1987
+            40.201788108163505, -77.19855780429205
           ],
           "arrivals": [
             "18:10",
@@ -62,7 +62,7 @@
           "id": "gy-paking-lot",
           "name": "GY PAKING LOT",
           "coords": [
-            40.2046, -77.2022
+            40.20458628421448, -77.202146472786
           ],
           "arrivals": [
             "18:15",
@@ -79,7 +79,7 @@
           "id": "mckenney-suites",
           "name": "MCKENNEY SUITES",
           "coords": [
-            40.2028, -77.1991
+            40.20309202675318, -77.19901220411047
           ],
           "arrivals": [
             "18:20",
@@ -96,7 +96,7 @@
           "id": "factory-apts",
           "name": "FACTORY APTS",
           "coords": [
-            40.2046, -77.1947
+            40.20422437349644, -77.19432478575389
           ],
           "arrivals": [
             "18:25",
@@ -113,7 +113,7 @@
           "id": "stuart-denny-hall",
           "name": "STUART/DENNY HALL",
           "coords": [
-            40.2024, -77.1935
+            40.20237628236061, -77.19384702109798
           ],
           "arrivals": [
             "18:30",
@@ -130,7 +130,7 @@
           "id": "walmart",
           "name": "WALMART",
           "coords": [
-            40.1899, -77.1947
+            40.189694220150315, -77.19495961443955
           ],
           "arrivals": [
             "18:35",
@@ -149,31 +149,31 @@
   "hours": {
     "monday": {
       "start": "18:00",
-      "end": "23:50"
+      "end": "23:59"
     },
     "tuesday": {
       "start": "18:00",
-      "end": "23:50"
+      "end": "23:59"
     },
     "wednesday": {
       "start": "18:00",
-      "end": "23:50"
+      "end": "23:59"
     },
     "thursday": {
       "start": "18:00",
-      "end": "23:50"
+      "end": "23:59"
     },
     "friday": {
       "start": "18:00",
-      "end": "23:50"
+      "end": "23:59"
     },
     "saturday": {
       "start": "18:00",
-      "end": "23:50"
+      "end": "23:59"
     },
     "sunday": {
       "start": "18:00",
-      "end": "23:50"
+      "end": "23:59"
     }
   }
 }

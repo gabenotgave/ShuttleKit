@@ -35,9 +35,17 @@ ShuttleKit is designed with a fully decoupled architecture, allowing the backend
 ```
 ShuttleKit/
 ├── api/                          # Backend (FastAPI)
-│   ├── main.py                   # API server and endpoints
-│   ├── geo.py                    # Geospatial calculations (Haversine)
-│   ├── planning.py               # Route planning logic
+│   ├── main.py                   # Uvicorn entry (`uvicorn main:app`)
+│   ├── mcp_server.py             # MCP SSE entry (`python mcp_server.py`)
+│   ├── shuttlekit/               # Application package
+│   │   ├── main.py               # FastAPI app and routes
+│   │   ├── geo.py                # Haversine, nearest stops, geocoding
+│   │   ├── planning.py           # Trip scheduling on loop routes
+│   │   ├── services.py           # Config + HTTP service helpers
+│   │   ├── feature_flags.py      # FEATURE_FLAGS_CHATBOT → GET /api/features
+│   │   ├── embedded_mcp.py       # Spawns mcp_server.py when chatbot is enabled
+│   │   ├── mcp_server.py         # FastMCP tool definitions (SSE)
+│   │   └── agent/                # LangGraph agent + MCP client
 │   ├── config.json               # Campus configuration
 │   ├── requirements.txt          # Python dependencies
 │   ├── .env.example              # Environment template
@@ -50,23 +58,30 @@ ShuttleKit/
 │   └── tests/                    # Unit tests
 │       ├── api/
 │       │   ├── test_geo.py
-│       │   └── test_planning.py
+│       │   ├── test_planning.py
+│       │   └── test_chat.py
 │       └── postman/
 │           └── *.postman_collection.json
 │
 ├── web/                          # Frontend (Next.js)
 │   ├── app/                      # Next.js app router
-│   │   ├── page.tsx             # Main application page
-│   │   ├── layout.tsx           # Root layout
+│   │   ├── page.tsx             # Main trip planner
+│   │   ├── schedule/page.tsx    # Schedule view
+│   │   ├── chat/                # Shuttle assistant (gated by GET /api/features)
+│   │   ├── admin/page.tsx       # Disruptions admin (when configured)
+│   │   ├── layout.tsx           # Root layout (feature flags, disruption banner, tabs)
 │   │   └── globals.css          # Global styles
 │   ├── components/               # React components
 │   │   ├── map-display.tsx      # Google Maps integration
 │   │   ├── search-panel.tsx     # Trip search form
 │   │   ├── itinerary-panel.tsx  # Results display
-│   │   ├── navbar.tsx           # Navigation bar
+│   │   ├── navbar.tsx           # Top bar (campus name, status)
+│   │   ├── bottom-tab-bar.tsx   # Bottom navigation
+│   │   ├── disruption-banner.tsx
 │   │   └── ui/                  # Reusable UI components
 │   ├── lib/                      # Utilities
 │   │   ├── shuttle-api.ts       # API client
+│   │   ├── feature-flags-server.ts  # Cached GET /api/features (RSC)
 │   │   └── utils.ts             # Helper functions
 │   ├── hooks/                    # React hooks
 │   ├── public/                   # Static assets
@@ -92,7 +107,7 @@ User Input (coordinates)
   → Frontend (search-panel.tsx)
   → API Client (shuttle-api.ts)
   → Backend API (/api/plan)
-  → Planning Logic (planning.py + geo.py)
+  → Planning Logic (`shuttlekit/planning.py` + `shuttlekit/geo.py`)
   → Response (itinerary JSON)
   → Frontend Display (itinerary-panel.tsx + map-display.tsx)
 ```
@@ -107,6 +122,18 @@ Page Load
   → Config Data (config.json)
   → Map Display (map-display.tsx with Google Maps)
 ```
+
+### 3. Shuttle assistant (optional)
+
+```
+User message + session_id
+  → POST /api/chat
+  → shuttlekit.agent (LangGraph + LLM)
+  → MCP tools over SSE (shuttlekit/mcp_server.py — separate process; spawned by uvicorn when chat is on)
+  → JSON { session_id, reply, model_display }
+```
+
+The frontend reads **`GET /api/features`** (e.g. `chatbot`) to show or hide the assistant shell. With chat enabled (**`FEATURE_FLAGS_CHATBOT`**, default **true** when unset), uvicorn starts **`embedded_mcp`** (`mcp_server.py` child). Configure `MCP_SSE_URL` / `MCP_PORT` in `api/.env`.
 
 ## Key Design Principles
 
@@ -124,32 +151,41 @@ Page Load
 - Easy customization for different campuses
 - Automated ingestion from schedule documents
 
-### 3. Stateless API
+### 3. REST layer and chat sessions
 
-- No session management or authentication (can be added)
-- Each request is independent
-- Horizontally scalable
-- Simple caching strategies
+- Most endpoints are stateless: each request is independent and needs no cookie or server session.
+- **`POST /api/chat`** uses a client-generated **`session_id`** so the LangGraph agent can continue a thread; checkpoint state is **in-process** (`MemorySaver`) unless you swap in a persistent checkpointer.
+- No authentication (can be added).
 
 ### 4. Environment-Based Configuration
 
 **Backend (`api/.env`):**
-- `INGESTION_API_KEY` - LLM API key for schedule extraction
-- `MODEL` - LLM model identifier
+- **Ingestion:** `INGESTION_MODEL`, `INGESTION_API_KEY` (see `api/ingestion/ingest.py`, `api/.env.example`)
+- **Feature flags:** `FEATURE_FLAGS_CHATBOT` — toggles chat API routes and the `chatbot` key in `GET /api/features` (default **true** when unset)
+- **Chat agent:** `MODEL_NAME`, `PROVIDER`, provider API keys as needed; `MCP_PORT`, `MCP_SSE_URL` (MCP must be reachable for chat; started automatically when chat is on)
+- See `api/.env.example` for the full list (including chat thread pruning and admin passphrase for disruptions)
 
 **Frontend (`web/.env.local`):**
 - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` - Google Maps API key
-- `NEXT_PUBLIC_API_URL` - Backend API URL
+- `NEXT_PUBLIC_API_URL` - Backend API URL (used for config, features, and API calls)
 
 ## API Endpoints
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/api/config` | GET | Campus name and map center |
+| `/api/features` | GET | Whitelisted feature flags (`chatbot`, …) |
 | `/api/status` | GET | Current shuttle operational status |
 | `/api/stops` | GET | All stops with routes |
 | `/api/routes` | GET | All routes with paths for map display |
+| `/api/schedule` | GET | Full timetable per route, hours, timezone |
 | `/api/plan` | GET | Trip planning with itinerary |
+| `/api/disruptions` | GET | Active/upcoming disruptions; optional admin scope with `X-Shuttle-Admin-Token` |
+| `/api/disruptions` | POST | Create disruption (requires `X-Shuttle-Admin-Token` + `SHUTTLE_ADMIN_PASSPHRASE`) |
+| `/api/disruptions/{id}` | DELETE | Remove disruption (admin) |
+| `/api/chat` | POST | LLM + MCP shuttle assistant (`session_id`, `message`); **404** if chatbot off |
+| `/api/chat/model` | GET | Model label for UI; **404** if chatbot off |
+| `/api/chat/history` | GET | Thread messages for `session_id`; **404** if chatbot off |
 
 See interactive docs at `http://localhost:8000/docs` when running the backend.
 
@@ -220,6 +256,7 @@ See interactive docs at `http://localhost:8000/docs` when running the backend.
 - **Geospatial**: Custom Haversine implementation
 - **Schedule Parsing**: LiteLLM + Vision models
 - **Geocoding**: Geopy + Nominatim (OpenStreetMap)
+- **Shuttle assistant (`/api/chat`)**: LangChain + LangGraph agent; tools invoked via **[MCP](https://modelcontextprotocol.io/)** over **SSE** using [FastMCP](https://github.com/jlowin/fastmcp). The server exposes **three tools** (`get_schedule`, `get_trip`, `get_coords_by_addresses`); schedule data aggregates status, stops, routes, and timetable. Child process when chatbot feature is on; default port `8001` (see [SETUP.md](SETUP.md#mcp-server-and-chat-assistant))
 - **Testing**: pytest
 
 ### Frontend
@@ -233,10 +270,11 @@ See interactive docs at `http://localhost:8000/docs` when running the backend.
 ## Deployment Considerations
 
 ### Backend
-- Stateless design allows horizontal scaling
+- Stateless design allows horizontal scaling for read-only and planning endpoints
 - No database required (config file-based)
 - Can run on serverless platforms (with config in environment)
 - CORS configuration needed for production frontend URL
+- **Chat**: MCP over SSE (child of uvicorn when `FEATURE_FLAGS_CHATBOT` is on); the API must reach MCP at `MCP_SSE_URL`, or disable chat via feature flags
 
 ### Frontend
 - Static generation possible for most pages

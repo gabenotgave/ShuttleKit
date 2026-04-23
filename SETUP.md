@@ -7,7 +7,8 @@ This guide walks you through forking ShuttleKit, customizing it for your campus 
 1. [Fork and Clone](#fork-and-clone)
 2. [Configure for Your Campus](#configure-for-your-campus)
 3. [Local Development](#local-development)
-4. [Deployment](#deployment)
+4. [MCP server and chat assistant](#mcp-server-and-chat-assistant)
+5. [Deployment](#deployment)
 
 ---
 
@@ -49,17 +50,14 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Edit `api/.env` and add your LLM API key:
+Edit `api/.env` and set ingestion variables:
 
 ```env
+INGESTION_MODEL=gemini/gemini-1.5-flash
 INGESTION_API_KEY=your_api_key_here
-MODEL=gemini/gemini-1.5-flash
 ```
 
-Supported models:
-- `gemini/gemini-1.5-flash` (Google Gemini - recommended, free tier available)
-- `gpt-4-vision-preview` (OpenAI GPT-4 Vision)
-- Any vision-capable model supported by [LiteLLM](https://docs.litellm.ai/docs/providers)
+`ingest.py` passes `INGESTION_MODEL` to [LiteLLM](https://docs.litellm.ai/docs/providers) and maps `INGESTION_API_KEY` to the right provider env var (`GEMINI_*`, `OPENAI_*`, etc.). Use a **vision- or document-capable** model; PDF/image behavior varies by provider. Defaults that work well: **`gemini/gemini-1.5-flash`**. The legacy **`MODEL`** env var is still read if `INGESTION_MODEL` is unset.
 
 #### 3. Run Ingestion
 
@@ -186,8 +184,45 @@ Frontend available at `http://localhost:3000`
 
 ```bash
 cd api
-pytest tests/ -v
+pytest tests/api/ -v
 ```
+
+---
+
+## MCP server and chat assistant
+
+The map and trip planner use only the **FastAPI** process. The **shuttle assistant** (`POST /api/chat`) additionally needs an **[MCP](https://modelcontextprotocol.io/)** (Model Context Protocol) server: it exposes shuttle data and planning as **tools** the LLM can call. ShuttleKit runs that server with **[FastMCP](https://github.com/jlowin/fastmcp)** over **SSE** (Server-Sent Events) on a **separate port** from the HTTP API.
+
+**What the MCP server provides:** three FastMCP tools in `api/shuttlekit/mcp_server.py`: **`get_schedule`** (aggregates campus name, live service status, hours, timezone, stops with coordinates, routes, full timetable, disruption hints), **`get_trip`** (plan between two lat/lng points), and **`get_coords_by_addresses`** (geocode free-text addresses). `api/mcp_server.py` is the CLI entry and is what uvicorn spawns when the chatbot feature is on.
+
+### Run locally
+
+Use the same virtualenv and `api/.env`.
+
+With **`FEATURE_FLAGS_CHATBOT` enabled** (see `.env.example`), **`uvicorn` starts `mcp_server.py` for you** as a child process. One terminal is enough:
+
+```bash
+cd api
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+uvicorn main:app --reload
+```
+
+The API stays on **port 8000**; MCP listens on **`MCP_PORT`** (default **8001**). The chat agent connects to MCP at **`MCP_SSE_URL`** (default `http://127.0.0.1:8001/sse`). Stop uvicorn to stop both.
+
+If the chatbot feature is **disabled**, MCP is not started automatically and **`/api/chat*`** routes return **404** (not **503**).
+
+### Environment variables (`api/.env`)
+
+| Variable | Purpose |
+|----------|---------|
+| `MCP_PORT` | Port the MCP process binds (default `8001`). Avoid clashing with uvicorn (`8000`). |
+| `MCP_SSE_URL` | Full SSE URL the LangGraph agent uses; must point at your running MCP server (path is `/sse`). |
+
+For chat, also set **`MODEL_NAME`**, **`PROVIDER`**, and the API key for your provider (see `api/.env.example`). If the chatbot is **on** but MCP failed to start or is unreachable, **`POST /api/chat`** can fail with **503** (transport error). If the chatbot is **off**, you get **404** instead.
+
+### Production
+
+With chatbot enabled, the API process starts MCP locally; ensure **`MCP_SSE_URL`** is reachable from the agent (same host/port as in production). If MCP is omitted, disable the chat feature (`FEATURE_FLAGS_CHATBOT=false`).
 
 ---
 
@@ -345,8 +380,7 @@ Vercel automatically handles builds, SSL, and CDN.
 3. Connect GitHub repository
 4. Configure:
    - **Base directory**: `web`
-   - **Build command**: `npm run build`
-   - **Publish directory**: `web/.next`
+   - **Build command**: `npm run build` (Netlify’s Next.js runtime handles the output; no manual “static export” folder)
 5. Add environment variables in Site settings
 6. Deploy
 
@@ -361,35 +395,18 @@ Vercel automatically handles builds, SSL, and CDN.
 4. Add environment variables
 5. Deploy
 
-#### Option 4: Self-Hosted (Static Export)
+#### Option 4: Self-Hosted (Node server)
 
-For static hosting on any web server:
+This repo’s frontend is a standard **Next.js** app (SSR + API routes to your backend). Build and run with Node, or put a reverse proxy in front of `npm start`:
 
 ```bash
 cd web
-
-# Build for production
+npm install
 npm run build
-npm run export  # If using static export
-
-# Deploy the 'out' directory to any static host
-# Examples: nginx, Apache, S3, GitHub Pages
+npm start   # serves on port 3000 by default
 ```
 
-Configure nginx:
-
-```nginx
-server {
-    listen 80;
-    server_name yourdomain.com;
-    root /var/www/shuttlekit;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-}
-```
+For process management (systemd, PM2, etc.), run `npm start` from `web/` with `NODE_ENV=production` and the same `NEXT_PUBLIC_*` variables as cloud deploys. Static export (`next export`) is **not** configured in this project; use Vercel/Netlify/Railway or a Node host unless you add an export pipeline yourself.
 
 ---
 
@@ -397,7 +414,7 @@ server {
 
 ### Update CORS Settings
 
-After deploying the frontend, update the backend CORS settings in `api/main.py`:
+After deploying the frontend, update the backend CORS settings in `api/shuttlekit/main.py`:
 
 ```python
 app.add_middleware(
@@ -406,7 +423,7 @@ app.add_middleware(
         "http://localhost:3000",  # Local development
         "https://your-frontend-domain.com",  # Production
     ],
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 ```
@@ -438,12 +455,21 @@ NEXT_PUBLIC_API_URL=https://your-api-domain.com
 - Check file permissions
 
 **CORS errors:**
-- Add your frontend domain to `allow_origins` in `api/main.py`
+- Add your frontend domain to `allow_origins` in `api/shuttlekit/main.py`
 - Redeploy backend
 
 **Timezone issues:**
 - Verify timezone string in `config.json` matches IANA format
 - Test with: `python -c "from zoneinfo import ZoneInfo; print(ZoneInfo('Your/Timezone'))"`
+
+**Chat returns 404:**
+- **`FEATURE_FLAGS_CHATBOT`** is off — enable it or omit it (default is on) if you want `/api/chat*`.
+
+**Chat returns 503 / “MCP” or transport error:**
+- Ensure **`FEATURE_FLAGS_CHATBOT`** is enabled and uvicorn started the MCP child (check logs), or run `python mcp_server.py` from `api/` only if you are not relying on the built-in spawn (avoid two listeners on the same `MCP_PORT`).
+- Check `MCP_SSE_URL` matches where MCP is listening (default `http://127.0.0.1:8001/sse`)
+- Confirm `MCP_PORT` matches the port in that URL
+- Verify LLM env vars (`MODEL_NAME`, `PROVIDER`, provider API keys) in `api/.env`
 
 ### Frontend Issues
 

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useJsApiLoader } from "@react-google-maps/api"
 import { Navbar } from "@/components/navbar"
 import { SearchPanel } from "@/components/search-panel"
 import { ItineraryPanel } from "@/components/itinerary-panel"
@@ -9,7 +10,13 @@ import { planTrip, isPlanError, getStatus, getConfig, type PlanResponse, type Sh
 import { AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
+const LIBRARIES: ["places"] = ["places"]
+
 export default function Home() {
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    libraries: LIBRARIES,
+  })
   const [plan, setPlan] = useState<PlanResponse | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -20,13 +27,7 @@ export default function Home() {
   // Fetch shuttle status and config on mount
   useEffect(() => {
     getStatus().then(setStatus)
-    getConfig().then((config) => {
-      setAppConfig(config)
-      // Update document title with campus name
-      if (config?.campus) {
-        document.title = `${config.campus} ShuttleKit`
-      }
-    })
+    getConfig().then(setAppConfig)
   }, [])
 
   // Get user location on mount
@@ -80,13 +81,13 @@ export default function Home() {
     <main className="relative h-screen w-full">
       <Navbar schoolName={appConfig?.campus ?? ""} status={status} />
       
-      {/* Map fills the entire screen */}
-      <div className="absolute inset-0 pt-14">
-        <MapDisplay plan={plan} userLocation={userLocation} mapCenter={appConfig?.map_center ?? null} />
+      {/* Map fills the screen; bottom inset leaves room for tab bar + safe area */}
+      <div className="absolute inset-0 pt-[calc(3.5rem+var(--sk-disruption-banner,0px))] pb-[calc(3.5rem+max(0.35rem,env(safe-area-inset-bottom)))]">
+        <MapDisplay plan={plan} userLocation={userLocation} mapCenter={appConfig?.map_center ?? null} isLoaded={isLoaded} loadError={loadError} />
       </div>
 
       {/* Search panel overlays the map */}
-      <SearchPanel onSearch={handleSearch} isLoading={isLoading} />
+      <SearchPanel onSearch={handleSearch} isLoading={isLoading} isLoaded={isLoaded} loadError={loadError} />
 
       {/* Error alert */}
       {error && (

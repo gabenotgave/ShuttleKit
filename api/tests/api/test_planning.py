@@ -5,7 +5,7 @@ import pytest
 # Add parent directory to path so we can import from api modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from planning import parse_hhmm, fmt_hhmm, plan_shuttle
+from shuttlekit.planning import parse_hhmm, fmt_hhmm, plan_shuttle
 
 
 class TestParseHhmm:
@@ -78,3 +78,26 @@ class TestPlanShuttle:
     def test_normal_trip_arrives_after_departs(self):
         result = plan_shuttle(ROUTE, STOP_A, STOP_C, parse_hhmm("05:50"))
         assert result[0]["arrives"] > result[0]["departs"]
+
+    def test_wrap_last_loop_dropped_when_after_service_end(self):
+            """Last loop wrap (e.g. McKenney→GY) can compute arrival past midnight; must not count."""
+            route = {
+                "id": "evening",
+                "name": "Evening",
+                "stops": [
+                    {"id": "anchor", "name": "A", "coords": [0, 0], "arrivals": ["18:00", "23:15"]},
+                    {"id": "gy", "name": "GY", "coords": [0, 0], "arrivals": ["18:15", "23:30"]},
+                    {"id": "mck", "name": "MCK", "coords": [0, 0], "arrivals": ["18:20", "23:35"]},
+                ],
+            }
+            mck = route["stops"][2]
+            gy = route["stops"][1]
+            # Without end filter: last trip departs MCK 23:35, arrives GY next calendar segment (24:15)
+            raw = plan_shuttle(route, mck, gy, parse_hhmm("23:10"))
+            assert len(raw) == 1
+            assert raw[0]["arrives"] > parse_hhmm("23:50")
+
+            filtered = plan_shuttle(
+                route, mck, gy, parse_hhmm("23:10"), service_end_minutes=parse_hhmm("23:50")
+            )
+            assert filtered == []

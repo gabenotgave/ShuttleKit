@@ -47,12 +47,9 @@ npm install
 
 ### Configuration
 
-1. **Backend environment** (optional, only needed for schedule ingestion):
-   ```bash
-   cd api
-   cp .env.example .env
-   # Edit .env with your LLM API key for schedule ingestion
-   ```
+1. **Backend environment** — copy `api/.env.example` to `api/.env` and set variables as needed:
+   - **Schedule ingestion** (optional): `INGESTION_MODEL`, `INGESTION_API_KEY` (see `api/.env.example`)
+   - **Chat assistant** (optional): `MODEL_NAME`, `PROVIDER`, provider API keys; **`MCP_PORT`** / **`MCP_SSE_URL`** when using [`POST /api/chat`](SETUP.md#mcp-server-and-chat-assistant). Set **`FEATURE_FLAGS_CHATBOT=false`** to disable the assistant API and hide chat UI (default when unset is **on** for backward compatibility).
 
 2. **Frontend environment**:
    ```bash
@@ -70,12 +67,14 @@ npm install
 
 ### Running the Application
 
-**Backend:**
+**Backend (map + REST API):**
 ```bash
 cd api
 uvicorn main:app --reload
 ```
 API available at `http://localhost:8000` (docs at `/docs`)
+
+**Shuttle assistant** (`/api/chat*`) uses an **MCP** server (FastMCP over SSE, default port **8001**). With **`FEATURE_FLAGS_CHATBOT`** enabled (the default), **`uvicorn` starts `mcp_server.py` as a child process**—one terminal is enough. If the chatbot flag is off, MCP is not started and chat routes return **404**. You can still run `python mcp_server.py` manually when debugging. See **[SETUP.md — MCP server and chat assistant](SETUP.md#mcp-server-and-chat-assistant)**.
 
 **Frontend:**
 ```bash
@@ -94,6 +93,7 @@ Frontend available at `http://localhost:3000`
 - Fork and customize the repository
 - Extract schedules from PDFs/images using AI
 - Configure routes, stops, and operating hours
+- **[MCP server and chat assistant](SETUP.md#mcp-server-and-chat-assistant)** (two-process local setup, env vars, production)
 - Deploy backend and frontend to various platforms
 - Post-deployment configuration and troubleshooting
 
@@ -119,24 +119,23 @@ Frontend available at `http://localhost:3000`
 ```
 ShuttleKit/
 ├── api/                      # Backend (FastAPI)
-│   ├── main.py              # API server and endpoints
-│   ├── geo.py               # Geospatial calculations (Haversine)
-│   ├── planning.py          # Route planning logic
+│   ├── main.py              # Uvicorn entry (`uvicorn main:app`)
+│   ├── mcp_server.py        # MCP SSE entry (`python mcp_server.py`; also spawned by uvicorn when chat is on)
+│   ├── shuttlekit/          # Application package (API, services, agent, MCP, feature flags, embedded MCP)
 │   ├── config.json          # Campus configuration (routes, stops, schedules)
 │   ├── requirements.txt     # Python dependencies
 │   ├── ingestion/           # AI-powered schedule extraction
 │   └── tests/               # Unit tests
 │
 ├── web/                     # Frontend (Next.js + TypeScript)
-│   ├── app/                 # Next.js app router pages
-│   ├── components/          # React components (map, search, itinerary)
+│   ├── app/                 # App router: `/`, `/schedule`, `/chat`, `/admin`
+│   ├── components/          # React components (map, search, itinerary, nav, disruptions)
 │   ├── lib/                 # API client and utilities
 │   └── package.json         # Node dependencies
 │
 ├── SETUP.md                 # Campus deployment guide
 ├── ARCHITECTURE.md          # Technical documentation
 ├── CONTRIBUTING.md          # Contribution guidelines
-├── MIGRATION.md             # Upgrade guide
 └── LICENSE                  # MIT License
 ```
 
@@ -151,10 +150,16 @@ Full API documentation is available at `http://localhost:8000/docs` when running
 ### Key Endpoints
 
 - `GET /api/config` — Campus configuration and map center
+- `GET /api/features` — Deployment feature flags for the web app (e.g. `chatbot`; values from `FEATURE_FLAGS_CHATBOT`)
 - `GET /api/status` — Current shuttle operational status
 - `GET /api/stops` — All stops with their routes
 - `GET /api/routes` — All routes with paths for map display
+- `GET /api/schedule` — Full timetable per route (arrivals, hours, timezone)
 - `GET /api/plan` — Trip planning with walk + shuttle itinerary
+- `GET /api/disruptions` — Active and upcoming service disruptions (public); admin token returns full list for `/admin`
+- `POST /api/chat` — Shuttle assistant turn (LLM + MCP tools); body includes `session_id` and `message` (404 if chatbot disabled)
+- `GET /api/chat/model` — Configured model label for the UI (404 if chatbot disabled)
+- `GET /api/chat/history` — Messages for a `session_id` (404 if chatbot disabled)
 
 See the [interactive API docs](http://localhost:8000/docs) for detailed parameters and responses.
 
@@ -185,7 +190,7 @@ See [SETUP.md](SETUP.md) for step-by-step deployment guides for each platform.
 
 ```bash
 cd api
-pytest tests/ -v
+pytest tests/api/ -v
 ```
 
 Tests cover geospatial calculations, route planning logic, and API endpoints.
@@ -198,7 +203,7 @@ ShuttleKit was created and developed by:
 
 - **Gabriel Arnold** - [arnolgab@dickinson.edu](mailto:arnolgab@dickinson.edu)
 - **Spencer Goodman** - [goodmasp@dickinson.edu](mailto:goodmasp@dickinson.edu)
-- **Edin Slawek** - [slaweks@dickinson.edu](mailto:slaweks@dickinson.edu)
+- **Eden Slawek** - [slaweks@dickinson.edu](mailto:slaweks@dickinson.edu)
 
 ---
 
